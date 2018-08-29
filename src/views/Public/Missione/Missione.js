@@ -19,7 +19,7 @@ class Missione extends Component{
           </div>
           <div className="paragrafo col-7 mx-0">
             <h5 className="">
-            Il primo progetto nazionale di pubblicazione di dati delle Pubbliche Amministrazioni è stato lanciato nel 2011 con il portale dati.gov.it, divenuto nel tempo il riferimento nazionale per i dati aperti della Pubblica Amministrazione Italiana. Dati.gov.it nasceva con l’obiettivo di fornire, in un unico punto di accesso, le principali informazioni sui dati aperti esposti dalle Pubbliche Amministrazioni locali e centrali, facilitando così la ricerca dei dati e pertanto il loro potenziale riutilizzo.
+            Il primo progetto nazionale di pubblicazione di dati delle Pubbliche Amministrazioni è stato lanciato nel 2011 con il portale <a href="https://www.dati.gov.it/">dati.gov.it</a>, divenuto nel tempo il riferimento nazionale per i dati aperti della Pubblica Amministrazione Italiana. Dati.gov.it nasceva con l’obiettivo di fornire, in un unico punto di accesso, le principali informazioni sui dati aperti esposti dalle Pubbliche Amministrazioni locali e centrali, facilitando così la ricerca dei dati e pertanto il loro potenziale riutilizzo.
 
             Il nuovo progetto Dataportal ha lo scopo di andare oltre la mera pubblicazione di un catalogo di dati aperti. Esso mira a rendere i dati delle pubbliche amministrazioni:
             </h5>
