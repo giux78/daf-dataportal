@@ -17,9 +17,28 @@ export const themes = [
   { 'val': 'TRAN', 'name': 'TRASPORTO' }
 ]
 
-export const tipi = [{ 'val': 'catalog_test','name': 'Dataset'},{ 'val': 'dashboards','name': 'Dashboard'},{ 'val': 'stories','name': 'Storie'}]
+export const ckanTranslate = [
+  {'key': 'contact_name','val': 'Contact Name'},
+  {'key': 'contact_uri','val': 'Contact URI'},
+  {'key': 'guid','val': 'GUID'},
+  /* {'key': 'source_catalog_description','val': ''},
+  {'key': 'source_catalog_homepage','val': ''},
+  {'key': 'source_catalog_language','val': ''},
+  {'key': 'source_catalog_modified','val': ''},
+  {'key': 'source_catalog_publisher','val': ''},
+  {'key': 'source_catalog_title','val': ''}, */
+  {'key':'contact_email', 'val': 'Contact email	'},
+  {'key':'publisher_uri', 'val': 'Publisher URI'},
+
+  {'key': 'uri','val': 'URI'},
+
+]
+
+export const tipi = [{ 'val': 'catalog_test','name': 'Dataset'},{ 'val': 'dashboards','name': 'Dashboard'},{ 'val': 'stories','name': 'Storie'}/* , {'val':'ext_opendata', 'name':'Ext. Opendata'} */]
 
 export const visibilita = [{ 'val': '2','name': 'Open data'},{ 'val': '0','name': 'Privato'},{ 'val': '1','name': 'Organizzazione'}]
+
+export const roles = [{"key":"daf_sys_admin", "label":"Amministratore di sistema"},{"key":"daf_adm", "label":"Amministratore"},{"key":"daf_vwr", "label":"Utente base"},{"key":"daf_edt", "label":"Editor"}]
 
 String.prototype.replaceAll = function (search, replacement) {
   var target = this;
@@ -54,40 +73,65 @@ export function transformName(name){
     }
   }
 
-  export function isEditor(){
-    var isEditor = false;
-    var token = localStorage.getItem('token')
-    if(token){
-      var jwtDecode = require('jwt-decode');
-      var decoded = jwtDecode(token);
-      try{
-        decoded['memberOf'].map((elem) => {
-          if(elem.indexOf('cn=daf_editors') !== -1)
-            isEditor = true
-        })
-      }catch(error){
-        console.log('error isEditor: ' + error)
+  export function setSupersetCookie(json){
+    if(json.error!=1){
+      if(json.length>0){
+        for(let i in json) {
+          let cookie = json[i];
+          if(cookie)
+            document.cookie = cookie.name+"="+ cookie.value + "; path="+cookie.path+"; domain=.dataportal" + serviceurl.domain;
+        }
       }
     }
+  }
+
+  export function isSysAdmin(loggedUser){
+    var isAdmin = false;
+    loggedUser && loggedUser.roles.map((role) => {
+      if(role === 'daf_sys_admin')
+      isAdmin = true
+      }
+    )
+    return isAdmin
+  }
+
+  export function isAdmin(loggedUser){
+    var isAdmin = false;
+    loggedUser && loggedUser.roles.map((role) => {
+      if(role.indexOf('daf_adm_')>-1)
+        isAdmin = true
+      }
+    )
+    return isAdmin
+  }
+
+  export function isOrgAdmin(loggedUser, organization){
+    var isAdmin = false;
+    
+    if(loggedUser && loggedUser.roles.indexOf('daf_adm_'+organization)>-1){
+      isAdmin = true
+    }  
+    
+    return isAdmin
+  }
+
+  export function isEditor(loggedUser){
+    var isEditor = false;
+    loggedUser && loggedUser.roles.map((role) => {
+      if(role.indexOf('daf_edt_')>-1)
+        isEditor = true
+      }
+    )
     return isEditor
   }
 
-  export function isAdmin(){
-    var isEditor = false;
-    var token = localStorage.getItem('token')
-    if(token){
-      var jwtDecode = require('jwt-decode');
-      var decoded = jwtDecode(token);
-      try{
-        decoded['memberOf'].map((elem) => {
-          if(elem.indexOf('cn=daf_admins') !== -1)
-            isEditor = true
-        })
-      }catch(error){
-        console.log('error isEditor: ' + error)
-      }
-    }
-    return isEditor
+  export function getEditorAdminOrganizations(loggedUser){
+    var result=[]
+    loggedUser && loggedUser.organizations.map((org) => {
+       if(loggedUser.roles.indexOf('daf_edt_' + org)>-1 || loggedUser.roles.indexOf('daf_adm_' + org)>-1)
+          result.push(org)
+    })
+    return result
   }
 
   export function isPublic(){
@@ -227,6 +271,17 @@ export function transformName(name){
     return found
   }
 
+  export function decodeCkan(value){
+    var found=value
+    for(var i = 0; i < ckanTranslate.length; i++) {
+      if (ckanTranslate[i].key == value) {
+          found = ckanTranslate[i].val
+          break
+      }
+    }
+    return found
+  }
+
   export function decodeVisibilita(value){
     var found=value
     for(var i = 0; i < visibilita.length; i++) {
@@ -238,6 +293,31 @@ export function transformName(name){
     return found
   }
 
+  export function getTimestamp() {
+    var date = new Date();
+
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+    var hour = date.getHours();
+    var min = date.getMinutes();
+    var sec = date.getSeconds();
+
+    month = (month < 10 ? "0" : "") + month;
+    day = (day < 10 ? "0" : "") + day;
+    hour = (hour < 10 ? "0" : "") + hour;
+    min = (min < 10 ? "0" : "") + min;
+    sec = (sec < 10 ? "0" : "") + sec;
+
+    var str = day + month + date.getFullYear() + "_" + hour + min + sec;
+    return str;
+  }
+
+  export function convertNotificationTime(timestamp){
+    var sp = timestamp.split('_')
+    var dateSp = sp[0].split('-')
+
+    return (dateSp[2]+'/'+dateSp[1]+'/'+dateSp[0]+' '+sp[1])
+  }
 
 /* 
   export default themes

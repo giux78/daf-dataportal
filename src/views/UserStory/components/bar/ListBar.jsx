@@ -1,5 +1,4 @@
-import React, { PropTypes } from 'react';
-import { Route, Link } from 'react-router-dom';
+import React from 'react';
 import { connect } from 'react-redux'
 import { isAdmin, isEditor, isPublic } from '../../../../utility.js'
 
@@ -28,17 +27,11 @@ class ViewBar extends React.Component {
         isOpen: props.isOpen?props.isOpen:false,
         validationMSg: 'Campo obbligatorio',
         validationMSgOrg: 'Campo obbligatorio',
-        pvt: '0',
-        org: 'default_org'
+        pvt: '0'
       }
   }
   
   onPvtChange(e, value){
-    if(this.pvt.value == 0){
-      this.setState({
-        org: 'default_org'
-      });
-    }
     this.setState({
         pvt: value
     });
@@ -97,10 +90,6 @@ class ViewBar extends React.Component {
         this.setState({
           validationMSgOrg: 'Campo obbligatorio'
         });
-      }else if(this.org.value=='default_org' && this.pvt.value == 1){
-        this.setState({
-          validationMSgOrg: 'Non è possibile creare una storia privata con l\'organizzazione selezionata'
-        });
       }else{
         let layout = { rows: [] };
         let widgets = {};
@@ -153,7 +142,7 @@ class ViewBar extends React.Component {
                 <div className="form-group row">
                   <label className="col-md-2 form-control-label">Privata</label>
                   <div className="col-md-8">
-                  {loggedUser && loggedUser.organizations && loggedUser.organizations.length > 1 ?
+                  {loggedUser && loggedUser.organizations && loggedUser.organizations.length > 0 ?
                     <select className="form-control" ref={(pvt) => this.pvt = pvt} onChange= {(e) => this.onPvtChange(e, e.target.value)} id="pvt" >
                       <option value="0" defaultValue key="0">No</option>
                       <option value="1" key='1'>Si</option>
@@ -163,7 +152,7 @@ class ViewBar extends React.Component {
                       <select className="form-control" ref={(pvt) => this.pvt = pvt} onChange= {(e) => this.onPvtChange(e, e.target.value)} id="pvt" >
                       <option value="0" defaultValue key="0">No</option>
                       </select>
-                      <span>Puoi creare soltanto dashboards pubbliche in quanto non hai nessuna organizzazione associata</span>
+                      <span>Puoi creare soltanto storie pubbliche in quanto non hai nessuna organizzazione associata</span>
                     </div>
                   }
                   </div>
@@ -186,7 +175,7 @@ class ViewBar extends React.Component {
             </ModalBody>
             <ModalFooter>
               <button className='btn btn-gray-200' onClick={this.hideModal}>
-                Close
+                Chiudi
               </button>
               <button type="button" className="btn btn-primary px-2" onClick={this.handleSave.bind(this)}>
                 <span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
@@ -207,7 +196,7 @@ class ViewBar extends React.Component {
                   <input id="prependedInput" className="form-control transparent-frame" size="25" type="text" onChange={this.props.onChange} placeholder="Filtra la lista ..."/>
               </div>
             </div>
-            {(!isPublic() && (isEditor() || isAdmin())) &&
+            {(!isPublic() && (isEditor(loggedUser) || isAdmin(loggedUser))) &&
             <div className="col-md-2">
               <button type="button" className="btn btn-link float-right" title="Aggiungi Dashboard" onClick={this.openModal}>
                 <i className="fa fa-plus-circle fa-lg m-t-2"></i>
@@ -224,23 +213,8 @@ class ViewBar extends React.Component {
   }
 };
 
-/* 
-ViewBar.propTypes = {
-  onEdit: PropTypes.func,
-  setLayout: PropTypes.func,
-  layout: PropTypes.object,
-  widgets: PropTypes.object
-}; 
-
-export default ViewBar;*/
-
-ViewBar.propTypes = {
-  loggedUser: PropTypes.object,
-  organizations: PropTypes.array
-}
-
 function mapStateToProps(state) {
-    const loggedUser = state.userReducer['obj'] && state.userReducer['obj'].loggedUser || { } 
+    const loggedUser = state.userReducer['obj']?state.userReducer['obj'].loggedUser:{ }   
     return { loggedUser }
 }
 

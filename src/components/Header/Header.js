@@ -1,7 +1,4 @@
 import React, { Component } from 'react';
-import { Dropdown, DropdownMenu, DropdownItem } from 'reactstrap';
-import PropTypes from 'prop-types'
-import { Redirect } from 'react-router'
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux'
 import fontawesome from '@fortawesome/fontawesome'
@@ -9,15 +6,11 @@ import FontAwesomeIcon from '@fortawesome/react-fontawesome'
 import { faGlobe } from '@fortawesome/fontawesome-free-solid'
 import {
 	loadDatasets,
-	unloadDatasets,
-	datasetDetail,
+  updateNotifications,
+  fetchNotifications,
 	logout
 } from '../../actions'
-import { createBrowserHistory } from 'history';
-import AutocompleteDataset from '../Autocomplete/AutocompleteDataset.js'
 import { isEditor, isAdmin } from '../../utility'
-
-const history = createBrowserHistory();
 
 class Header extends Component {
 
@@ -30,8 +23,10 @@ class Header extends Component {
 			this.toggleCrea = this.toggleCrea.bind(this)
 			this.mobileSidebarToggle = this.mobileSidebarToggle.bind(this)
 			this.createDash = this.createDash.bind(this)
+			this.createWidget = this.createWidget.bind(this)
       this.createStory = this.createStory.bind(this)
       this.closeMenu = this.closeMenu.bind(this)
+      this.toggleAsideMenu = this.toggleAsideMenu.bind(this)
 
 			this.state = {
 				mobile: false,
@@ -39,10 +34,29 @@ class Header extends Component {
 				dropdownOpen: false,
 				crea: false,
 				accento: false,
-				value: ''
-			};
+        value: '',
+        unread : 0,
+        unreadNotifications: []
+      };
+      
+      this.pushToPublic = this.pushToPublic.bind(this)
 		}
-	
+  
+    componentWillReceiveProps(nextProps){
+      
+      if(nextProps.notifications){
+        var unreadNot = nextProps.notifications.filter(notification =>{
+            return notification.status===1
+        })
+
+        //console.log(unreadNot)
+        this.setState({
+          unread: unreadNot.length,
+          unreadNotifications: unreadNot
+        })
+      }
+    }
+      
 	
 		toggleCrea(){
 			this.setState({
@@ -94,11 +108,6 @@ class Header extends Component {
 				this.props.openSearch();
 		}
 
-		asideToggle(e) {
-			e.preventDefault();
-			document.body.classList.toggle('aside-menu-hidden');
-		}
-
 		handleChange(event) {
 			this.setState({value: event.target.value});
 		}
@@ -139,6 +148,11 @@ class Header extends Component {
 			this.toggleCrea()
 		}
 
+		createWidget(){
+			this.props.openModalWidget();
+			this.toggleCrea()
+		}
+
 		createStory(){
 			/* this.props.history.push({
 				pathname: '/userstory/list',
@@ -161,6 +175,40 @@ class Header extends Component {
       }, () => {
         document.removeEventListener('click', this.closeMenu);
       });
+    }
+
+    pushToPublic(){
+      document.removeEventListener('click', this.closeMenu)
+      this.props.history.push('/')
+    }
+
+    toggleAsideMenu(){
+      const { dispatch } = this.props
+      document.body.classList.toggle('aside-menu-xl-show')
+      document.body.classList.toggle('aside-menu-hidden')
+      var unreadNot = this.state.unreadNotifications
+      if(unreadNot.length>0){
+        unreadNot.map(not => {
+          not.status = 2
+        })
+
+        console.log(unreadNot)
+        dispatch(updateNotifications(unreadNot))
+        .then(json => {
+          console.log(json)
+          this.setState({
+            isLoading: true,
+            unreadNotifications: []
+          })
+          dispatch(fetchNotifications(localStorage.getItem('user'), 20))
+          .then(json => {
+            console.log(json)
+            this.setState({
+              isLoading: false
+            })
+          })
+        })
+      }
     }
 
 		render() {
@@ -198,7 +246,8 @@ class Header extends Component {
 								<button className="w-100 h-100 btn btn-header" onClick={/* this.crea.bind(this) */this.toggleCrea}><i className="fa fa-plus fa-lg"/></button>
 								<div className={"dropdown-menu m-0 dropdown-menu-right "+ crea} aria-labelledby="dropdownMenuButton">
 									<h6 className="dropdown-header text-center"><b>Crea</b></h6>
-									{(isEditor() || isAdmin()) && <button className="dropdown-item" onClick={()=> { this.props.history.push('/private/ingestionwizzard'); this.toggleCrea}}><i className="fa fa-table"></i> Carica Dataset</button>}
+									{(isEditor(loggedUser) || isAdmin(loggedUser)) && <button className="dropdown-item" onClick={()=> { this.props.history.push('/private/ingestionwizzard'); this.toggleCrea}}><i className="fa fa-table"></i> Nuovo Dataset</button>}
+									<button className="dropdown-item" onClick={this.createWidget} ><i className="fa fa-chart-bar"></i> Nuovo Widget</button>
 									<button className="dropdown-item" onClick={this.createDash} ><i className="fa fa-columns"></i> Nuova Dashboard</button>
 									<button className="dropdown-item" onClick={this.createStory} ><i className="fa fa-font"></i> Nuova Storia</button>
 							</div>
@@ -206,11 +255,11 @@ class Header extends Component {
 						{/* <button className="w-100 h-100 btn btn-header" onClick={this.crea.bind(this)}><i className="fa fa-plus fa-lg"/></button> */}
 					</li>
 				</ul>
-				{/* <ul className="navbar-nav h-100 mr-2">
-					<li className="nav-item h-100">
-							<button className="w-100 h-100 btn btn-primary nav-link text-white"><i className="fa fa-bell-o" /><span className="badge badge-gray-100 badge-pill"></span></button>
-					</li>
-				</ul> */}
+        <ul className="navbar-nav mr-2">
+          <li className="nav-item">
+            <button className="btn btn-primary nav-link text-white" onClick={this.toggleAsideMenu}><i className={this.state.unread===0?"fa fa-bell fa-lg":"far fa-bell fa-lg"} /><span className="badge badge-white badge-pill text-primary">{this.state.unread===0?'':this.state.unread}</span></button>
+ 					</li>
+        </ul>
 				<ul className="nav navbar-nav mr-2">
 					<li className="nav-item">
 						<div className={"dropdown " + open}>
@@ -233,7 +282,7 @@ class Header extends Component {
 						<button className={"h-100 btn btn-accento"+navigation} id="dropdown" data-toggle="dropdown"  aria-haspopup="true" aria-expanded="false" onClick={this.toggleNav.bind(this)}><p className="m-0 p-0 d-md-down-none float-left">Area Privata</p><i className="float-left fa fa-lock fa-lg d-lg-none"/> <i className="fa fa-sort-down ml-2 align-top"/></button>
 							<div className={"dropdown-menu dropdown-menu-right m-0" + show} aria-labelledby="dropdownMenuButton">
 								<h6 className="dropdown-header bg-white"><b>VAI A</b></h6>
-								<button className="dropdown-item bg-light b-l-pvt border-primary pr-5" onClick={()=>this.props.history.push('/')}>
+								<button className="dropdown-item bg-light b-l-pvt border-primary pr-5" onClick={this.pushToPublic}>
 										<div className="row">
 												<h5 className="col-1 pl-0"><FontAwesomeIcon icon={faGlobe} className="mx-2"/></h5>
 												<div className="row col-11 ml-1">
@@ -251,65 +300,11 @@ class Header extends Component {
 		}
 	}
 
-
-/*
-<header className="app-header navbar">
-				<button className="navbar-toggler mobile-sidebar-toggler d-lg-none" onClick={this.mobileSidebarToggle} type="button">&#9776;</button>
-				<a className="navbar-brand" href="#"></a>
-				<ul className="nav navbar-nav d-md-down-none mr-auto">
-					<li className="nav-item">
-						<button className="nav-link navbar-toggler sidebar-toggler" type="button" onClick={this.sidebarToggle}>&#9776;</button>
-					</li>
-				</ul>
-				<ul className="nav navbar-nav d-md-down-none">
-					<AutocompleteDataset ref="auto"/>
-					<button className="btn btn-outline-success my-2 my-sm-0" type="submit" value="submit" onClick={this.handleLoadDatasetClick}>Cerca</button>
-				</ul>
-				<ul className="nav navbar-nav ml-auto">
-					<li className="nav-item">
-						<Dropdown isOpen={this.state.dropdownOpen} toggle={this.toggle}>
-							<button onClick={this.toggle} className="nav-link dropdown-toggle" data-toggle="dropdown" type="button" aria-haspopup="true" aria-expanded={this.state.dropdownOpen}>
-								<img src={'img/avatars/7.jpg'} className="img-avatar" alt="admin@bootstrapmaster.com"/>
-								<span className="d-md-down-none">{loggedUser?loggedUser.email:''}</span>
-							</button>
-
-							<DropdownMenu className="dropdown-menu-right">
-								<DropdownItem header className="text-center"><strong>Settings</strong></DropdownItem>
-								<DropdownItem><a className="nav-link" href="/#/profile"><i className="fa fa-user"></i> Profile</a></DropdownItem>
-								<DropdownItem><i className="fa fa-wrench"></i> Settings</DropdownItem>
-								<DropdownItem divider />
-								<DropdownItem> <a className="nav-link"  onClick={() => {
-								logout()
-								}} href="/"><i className="fa fa-lock"></i> Logut</a></DropdownItem>
-
-							</DropdownMenu>
-						</Dropdown>
-					</li>
-					
-					<li className="nav-item hidden-md-down">
-						<a className="nav-link navbar-toggler aside-menu-toggler" href="#"></a>
-					</li>
-				</ul>
-			</header>
-			*/
-
-
-/*
-<form className="form-inline my-2 my-lg-0" onSubmit={this.handleSubmit}>
-	<input className="form-control mr-sm-2" type="text" placeholder="Cerca Dataset" value={this.state.value} onChange={this.handleChange}/>
-	<button className="btn btn-outline-success my-2 my-sm-0" type="submit" value="submit">Cerca</button>
-</form>
-*/
-
-Header.propTypes = {
-	loggedUser: PropTypes.object,
-	value: PropTypes.string
-}
-
 function mapStateToProps(state) {
 	const { loggedUser } = state.userReducer['obj'] || { }
 	const { properties } = state.propertiesReducer['prop'] || {}
-	return { loggedUser, properties }
+  const { notifications, newNotifications } = state.notificationsReducer['notifications'] || {}
+	return { loggedUser, properties, notifications, newNotifications }
 }
 
 export default connect(mapStateToProps)(Header)

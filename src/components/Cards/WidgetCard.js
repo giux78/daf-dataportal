@@ -1,12 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import IframeWidget from '../../views/DatasetDetail/widgets/IframeWidget';
 import { transformWidgetName, truncateWidgetTitle, transformDatasetName } from "../../utility";
 import { serviceurl } from "../../config/serviceurl";
-import fontawesome from '@fortawesome/fontawesome'
-import FontAwesomeIcon from '@fortawesome/react-fontawesome'
-import { faLock, faGlobe, faUsers } from '@fortawesome/fontawesome-free-solid'
-
 
 
 class WidgetCard extends Component {
@@ -17,16 +12,6 @@ class WidgetCard extends Component {
         this.isSuperset = this.isSuperset.bind(this)
         this.isMetabase = this.isMetabase.bind(this)
     }
-
-    async loadImage(widget) {
-        let url = serviceurl.apiURLDatiGov + '/plot/' + widget + '/330x280';
-        const response = await fetch(url, {
-            method: 'GET'
-        })
-
-        return response
-    }
-
     isSuperset(){
         const { iframe } = this.props
         if((iframe.identifier && iframe.identifier.indexOf('superset')!== -1) || (iframe.props && iframe.props.identifier.indexOf('superset')!== -1))
@@ -52,39 +37,6 @@ class WidgetCard extends Component {
         return url
     }
 
-    /* componentDidMount(){
-        const { iframe } = this.props
-        let url = '';
-        if(iframe.identifier)
-            url = serviceurl.apiURLDatiGov + '/plot/' + iframe.identifier + '/330x280';
-        if(iframe.props)
-            url = serviceurl.apiURLDatiGov + '/plot/' + iframe.props.identifier + '/330x280';
-        const response = fetch(url, {
-            method: 'GET'
-        }).then(response => {
-            if (response.ok) {
-                response.text().then(text => {
-                    this.setState({
-                        loading: false,
-                        imageSrc: text.replace(/"/g, '')
-                    })
-                });
-            } else {
-                this.setState({
-                    loading: false,
-                    imageSrc: undefined
-                })
-            }
-        })
-    }
-
-    componentWillUnmount(){
-        this.setState({
-            loading: false,
-            imageSrc: undefined
-        })
-    } */
-
     linkTo(nome){
         this.props.history.push('/private/dataset/'+nome)
     }
@@ -107,16 +59,21 @@ class WidgetCard extends Component {
                   table = org + '_o_'+sp1[1]
                 }
             }
-        } else {
-            org = 'default_org'
+        }
+
+        var open
+        if(iframe.iframe_url && iframe.iframe_url.indexOf(serviceurl.urlSuperset)>-1){
+            open = false
+        }else if(iframe.iframe_url && iframe.iframe_url.indexOf(serviceurl.urlSupersetOpen)>-1){
+            open = true
         }
 
         var url = ''
 
         if(iframe.identifier)
-          url = serviceurl.urlCacher + 'plot/' + iframe.identifier + '/330x280';
+          url = serviceurl.urlCacher  + iframe.identifier + '.png';
         if(iframe.props)
-          url = serviceurl.urlCacher + 'plot/' + iframe.props.identifier + '/330x280';
+          url = serviceurl.urlCacher  + iframe.props.identifier + '.png';
         
         return(
             <div className="mx-auto">
@@ -127,16 +84,9 @@ class WidgetCard extends Component {
                                 <a href={this.getLink(iframe.iframe_url?iframe.iframe_url:iframe.props.url)} target='_blank' rel="noopener noreferrer" title={iframe.title}><p className="text-primary"><u>{truncateWidgetTitle(iframe.title)}</u></p></a>
                             </div>
                             <div className="col-3 my-2">
-                                {
-                                    org !== 'default_org' &&
-                                    //<span className="badge badge-pill badge-danger fa-pull-right badge-dash" title="Il widget è privato"> </span>
-                                    //<i className="fa fa-lock fa-lg fa-pull-right text-icon my-1 pointer" title="Il widget è privato"/>
+                                {!open?
                                     <span className="pointer" title='Il widget è privato'><i className="fas fa-lock fa-pull-right text-icon pointer" style={{fontSize: '16px'}}/></span>
-                                }
-                                {
-                                    org === 'default_org' &&
-                                    //<span className="badge badge-pill badge-success fa-pull-right badge-dash" title="Il widget è pubblico"> </span>
-                                    //<i className="fa fa-globe fa-pull-right fa-lg text-icon my-1 pointer" title='Il widget è pubblico'/>
+                                :
                                     <span className="pointer" title='Il widget è pubblico'><i className="fas fa-globe fa-pull-right text-icon pointer" style={{ fontSize: '16px' }}/></span>
                                 }
                             </div>

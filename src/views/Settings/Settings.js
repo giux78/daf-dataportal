@@ -1,14 +1,8 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { fetchProperties } from '../../actions';
+import { isAdmin } from '../../utility';
 import {
     Modal,
-    ModalHeader,
-    ModalTitle,
-    ModalClose,
-    ModalBody,
-    ModalFooter
 } from 'react-modal-bootstrap'
 import themes from './data/Themes'
 import Select from "react-select";
@@ -393,7 +387,7 @@ class Settings extends Component {
                                         searchable={true}
                                     />
                                 </div>
-                                {loggedUser.role==="daf_admins" && <button className="btn btn-link" title="Aggiungi un nuovo dominio" onClick={()=>this.setState({newDomain: false, showDiv: true, domain: ''})}><i className="fa fa-plus"/></button>}
+                                {isAdmin(loggedUser) && <button className="btn btn-link" title="Aggiungi un nuovo dominio" onClick={()=>this.setState({newDomain: false, showDiv: true, domain: ''})}><i className="fa fa-plus"/></button>}
                             </div>
                             <div hidden={this.state.showDiv}>
                                 <div className="form-group row">
@@ -476,7 +470,7 @@ class Settings extends Component {
                                     </div>
                                 </div>
                             </div>
-                            {loggedUser.role==="daf_admins" &&
+                            {isAdmin(loggedUser) &&
                             <div hidden={newDomain}>
                                 <div className="form-group row">
                                     <label className="col-2 col-form-label">Nuovo Dominio</label>
@@ -494,11 +488,6 @@ class Settings extends Component {
         </div>
     )
   }
-}
-
-Settings.propTypes = {
-  loggedUser: PropTypes.object,
-  dispatch: PropTypes.func.isRequired
 }
 
 function mapStateToProps(state) {

@@ -1,11 +1,5 @@
 import React from 'react';
-import { Bar } from 'react-chartjs';
-import { getRandomInt } from './util';
-import {Modal} from 'react-modal-bootstrap';
 import { toastr } from 'react-redux-toastr'
-
-
-import App from '../InfinityScrollWidgets/App.js'
 
 class BtnControlWidget extends React.Component {
     constructor() {
@@ -14,19 +8,23 @@ class BtnControlWidget extends React.Component {
             isModalAddOpen: false,
             isModalOpen: false
         }
-
-        /* this.addWidgetOpenModal = this.addWidgetOpenModal.bind(this)
-        this.addWidget = this.addWidget.bind(this) */
-        this.closeModal = this.closeModal.bind(this)
     }
 
     moveDown = function(index) {
         let rows = this.props.layout.rows;
         let from = index;
         let to = index + 1;
+        let prevWid = this.props.layout.rows[from-1]?this.props.layout.rows[from-1].columns[0].widgets[0].key:''
+        let currWid = this.props.layout.rows[from].columns[0].widgets[0].key
+        let nextWid = this.props.layout.rows[to]?this.props.layout.rows[to].columns[0].widgets[0].key:''
+        let doubleNextWid = this.props.layout.rows[to+1] ? this.props.layout.rows[to+1].columns[0].widgets[0].key:''
 
-        if(this.props.layout.rows[to+1] && (this.props.layout.rows[to+1].columns[0].widgets[0].key.indexOf('TextWidget')!==-1)){
+
+        if(currWid.indexOf('TextWidget')!==-1 && (doubleNextWid.indexOf('TextWidget')!==-1)){
           toastr.info('Attenzione', 'Hai già inserito un testo sotto questo elemento, modificalo per aggiungere paragrafi')
+        }
+        else if(prevWid.indexOf('TextWidget')!==-1 && (nextWid.indexOf('TextWidget')!==-1)){
+          toastr.info('Attenzione', 'Spostando sotto questo widget avrai due testi consecutivi, modifica il testo al posto di muovere il widget')
         }
         else{
           rows.splice(to, 0, rows.splice(from, 1)[0])
@@ -38,10 +36,16 @@ class BtnControlWidget extends React.Component {
         let rows = this.props.layout.rows;
         let from = index;
         let to = index - 1;
-
+        let prevWid = this.props.layout.rows[from+1]?this.props.layout.rows[from+1].columns[0].widgets[0].key:''
+        let currWid = this.props.layout.rows[from].columns[0].widgets[0].key
+        let nextWid = this.props.layout.rows[to] ? this.props.layout.rows[to].columns[0].widgets[0].key:''
+        let doubleNextWid = this.props.layout.rows[to-1] ? this.props.layout.rows[to-1].columns[0].widgets[0].key:''
         
-        if(this.props.layout.rows[to-1] && (this.props.layout.rows[to-1].columns[0].widgets[0].key.indexOf('TextWidget')!==-1)){
+        if(currWid.indexOf('TextWidget')!==-1 && (doubleNextWid.indexOf('TextWidget')!==-1)){
           toastr.info('Attenzione', 'Hai già inserito un testo sopra questo elemento, modificalo per aggiungere paragrafi')
+        }
+        else if(prevWid.indexOf('TextWidget')!==-1 && (nextWid.indexOf('TextWidget')!==-1)){
+          toastr.info('Attenzione', 'Spostando sopra questo widget avrai due testi consecutivi, modifica il testo al posto di muovere il widget')
         }
         else{
           rows.splice(to, 0, rows.splice(from, 1)[0])
@@ -71,29 +75,6 @@ class BtnControlWidget extends React.Component {
         rows.splice(this.props.index, 1);
         this.props.setLayout(this.props.layout);
     }
-    
-    closeModal = function (){
-        this.setState({
-            isModalOpen: false
-        })
-    }
-
-/*     addWidgetOpenModal = function() {
-        this.setState({
-            isModalAddOpen: true
-        });
-    }
-
-    addWidget = function(widgetName) {
-        this.props.addWidget(widgetName, this.props.index);
-        this.onRequestClose();
-    } */
-
-    onRequestClose = () => {
-        this.setState({
-            isModalAddOpen: false,
-        });
-    }
 
 
     render() {
@@ -104,7 +85,7 @@ class BtnControlWidget extends React.Component {
                     <span className="fa fa-plus" aria-hidden="true"></span>
                 </button> */}
 
-                { this.props.index != 0 &&
+                {this.props.index != 0 &&
                     <button type="button" className="btn btn-sm btn-gray-200" aria-label="Move Up"
                         onClick={() => this.moveUp(this.props.index)}>
                         <span className="fa fa-chevron-up" aria-hidden="true"></span>
@@ -120,21 +101,6 @@ class BtnControlWidget extends React.Component {
                     onClick={() => this.removeCol()}>
                     <span className="fa fa-trash" aria-hidden="true"></span>
                 </button>
-
-{/*                 <App 
-                widgets={this.props.widgets}
-                isModalOpen={this.state.isModalAddOpen}
-                onWidgetSelect={this.addWidget}
-                onRequestClose={this.onRequestClose}
-                    /> */}
-
-                {/*<AddWidgetDialog
-                    widgets={this.props.widgets}
-                    isModalOpen={this.state.isModalAddOpen}
-                    onWidgetSelect={this.addWidget}
-                    onRequestClose={this.onRequestClose}
-                    >
-                </AddWidgetDialog> */}
 
             </div>
         );

@@ -1,15 +1,12 @@
 import React, { Component } from 'react';
-import Components from 'react';
-import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { Route, Link } from 'react-router-dom';
-import ListBar from './bar/ListBar';
+import ListBar from './bar/ListBar.jsx';
 import UserstoryCard from "../../../components/Cards/UserstoryCard";
 import { isPublic } from '../../../utility'
 
 // App components
-import Header from './Header';
-import Container from './Container';
+import Header from './Header.jsx';
+import Container from './Container.jsx';
 
 // Services
 import UserStoryService from './services/UserStoryService';
@@ -44,7 +41,7 @@ class UserStoryList extends Component {
     if(isPublic() && properties.domain!=='dataportal' && properties.domain!=='dataportal-private')
       org = properties.organization
 
-    let response = userStoryService.list(org);
+    let response = isPublic()?userStoryService.listPbc(org):userStoryService.listPvt(org);
     response.then((list) => {
       this.originalUserStories = list;
       this.setState({
@@ -107,10 +104,8 @@ class UserStoryList extends Component {
                     break
                 }
                 const dashWidgets = JSON.parse(story.widgets)
-                var imageA = undefined
                 if (firstLayout != '') {
                   const firstWidget = dashWidgets[firstLayout];
-                  imageA = firstWidget.image
                 }
                 var time = 0
                 let widgets = Object.keys(dashWidgets)
@@ -129,7 +124,6 @@ class UserStoryList extends Component {
               <UserstoryCard 
                 story = {story}
                 widgetA={firstLayout}
-                imageA = {imageA}
                 time = {time}
                 key = {index}
                 id = {index}
@@ -150,11 +144,6 @@ class UserStoryList extends Component {
     );
   }
 
-}
-
-UserStoryList.propTypes = {
-  loggedUser: PropTypes.object,
-  dispatch: PropTypes.func.isRequired
 }
 
 function mapStateToProps(state) {

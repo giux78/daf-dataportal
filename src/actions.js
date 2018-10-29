@@ -4,8 +4,6 @@ import { serviceurl } from './config/serviceurl.js'
 // MOCK
 //import page from './data/dataset'
 //import det from './data/datasetdetail'
-import ont from './data/ontologies'
-import voc from './data/vocabulary'
 import settings from './data/settings'
 
 export const REQUEST_DATASETS = 'REQUEST_DATASETS'
@@ -15,6 +13,7 @@ export const SELECT_DATASET = 'SELECT_DATASET'
 export const RECEIVE_METADATA = 'RECEIVE_METADATA'
 export const REQUEST_DATASET_DETAIL = 'REQUEST_DATASET_DETAIL'
 export const RECEIVE_DATASET_DETAIL = 'RECEIVE_DATASET_DETAIL'
+export const RECEIVE_DATASET_ADDITIONAL_DETAIL = 'RECEIVE_DATASET_ADDITIONAL_DETAIL'
 export const RECEIVE_DATASET_DETAIL_ERROR = 'RECEIVE_DATASET_DETAIL_ERROR'
 export const REQUEST_LOGIN = 'REQUEST_LOGIN'
 export const RECEIVE_LOGIN = 'RECEIVE_LOGIN'
@@ -29,14 +28,16 @@ export const RECEIVE_RESET_ERROR = 'RECEIVE_RESET_ERROR'
 export const RECEIVE_ACTIVATION = 'RECEIVE_ACTIVATION'
 export const RECEIVE_ACTIVATION_ERROR = 'RECEIVE_ACTIVATION_ERROR'
 export const RECEIVE_ADD_DATASET = 'RECEIVE_ADD_DATASET'
-export const RECEIVE_ONTOLOGIES = 'RECEIVE_ONTOLOGIES'
-export const RECEIVE_VOCABULARY = 'RECEIVE_VOCABULARY'
 export const RECEIVE_PROPERTIES = 'RECEIVE_PROPERTIES'
 export const REQUEST_PROPERTIES = 'REQUEST_PROPERTIES'
 export const REQUEST_REGISTRATION = 'REQUEST_REGISTRATION'
 export const RECEIVE_FILE_STORAGEMANAGER = 'RECEIVE_FILE_STORAGEMANAGER'
 export const REQUEST_SEARCH = 'REQUEST_SEARCH'
 export const RECEIVE_SEARCH = 'RECEIVE_SEARCH'
+export const REQUEST_NOTIFICATIONS = 'REQUEST_NOTIFICATIONS'
+export const RECEIVE_NOTIFICATIONS = 'RECEIVE_NOTIFICATIONS'
+export const REQUEST_NEW_NOTIFICATIONS = 'REQUEST_NEW_NOTIFICATIONS'
+export const RECEIVE_NEW_NOTIFICATIONS = 'RECEIVE_NEW_NOTIFICATIONS'
 
 
 /*********************************** REDUX ************************************************ */
@@ -48,6 +49,26 @@ function receiveProperties(json, org){
     organization: org,
     receivedAt: Date.now(),
     ope: 'RECEIVE_PROPERTIES'
+  }
+}
+
+function receiveNotifications(json){
+  console.log('receiveNotifications');
+  return {
+    type: RECEIVE_NOTIFICATIONS,
+    notifications: json,
+    receivedAt: Date.now(),
+    ope: 'RECEIVE_NOTIFICATIONS'
+  }
+}
+
+function receiveNewNotifications(json){
+  console.log('receiveNewNotifications');
+  return {
+    type: RECEIVE_NEW_NOTIFICATIONS,
+    newNotifications: json,
+    receivedAt: Date.now(),
+    ope: 'RECEIVE_NEW_NOTIFICATIONS'
   }
 }
 
@@ -69,6 +90,18 @@ function receiveDataset(json, value) {
 function requestProperties(){
   return {
     type: REQUEST_PROPERTIES
+  }
+}
+
+function requestNotifications(){
+  return {
+    type: REQUEST_NOTIFICATIONS
+  }
+}
+
+function requestNewNotifications(){
+  return {
+    type: REQUEST_NEW_NOTIFICATIONS
   }
 }
 
@@ -98,12 +131,10 @@ function receiveMetadataAndResources(jsonMetadata){
     }
   }
 
-function receiveDatasetDetail(jsonDataset, jsonFeed, jsonIFrames, query, category_filter, group_filter, organization_filter, order_filter) {
+function receiveDatasetDetail(jsonDataset, query, category_filter, group_filter, organization_filter, order_filter) {
   return {
       type: RECEIVE_DATASET_DETAIL,
       dataset: jsonDataset,
-      feed: jsonFeed,
-      iframes: jsonIFrames,
       query: query,
       category_filter: category_filter,
       group_filter: group_filter,
@@ -111,6 +142,17 @@ function receiveDatasetDetail(jsonDataset, jsonFeed, jsonIFrames, query, categor
       order_filter: order_filter,
       receivedAt: Date.now(),
       ope: 'RECEIVE_DATASET_DETAIL'
+  }
+}
+
+function receiveDatasetAdditionalDetail(jsonDataset, jsonFeed, jsonIFrames) {
+  return {
+      type: RECEIVE_DATASET_ADDITIONAL_DETAIL,
+      dataset: jsonDataset,
+      feed: jsonFeed,
+      iframes: jsonIFrames,
+      receivedAt: Date.now(),
+      ope: 'RECEIVE_DATASET_ADDITIONAL_DETAIL'
   }
 }
 
@@ -147,12 +189,13 @@ function receiveSearchError(query) {
   }
 }
 
-function receiveSearch(json, query, filter) { 
+function receiveSearch(json, query, filter, filterInt) { 
   return {
     type: RECEIVE_SEARCH,
     results: json,
     query: query,
     filter: filter,
+    filterInt: filterInt,
     receivedAt: Date.now(),
     ope: 'RECEIVE_SEARCH',
     isFetching: false
@@ -192,29 +235,6 @@ export function receiveLogin(response) {
       user: response,
       receivedAt: Date.now(),
       ope: 'RECEIVE_LOGIN'
-  }
-}
-
-function receiveOntologies(response) {
-  return {
-      type: RECEIVE_ONTOLOGIES,
-      //ontologies: response,
-      ontologies: ont,
-      error: '',
-      receivedAt: Date.now(),
-      ope: 'RECEIVE_ONTOLOGIES'
-  }
-}
-
-function receiveVocabulary(response) {
-  return {
-      type: RECEIVE_VOCABULARY,
-      //vocabulary: response,
-      vocabulary: voc,
-      ontologies: ont,
-      error: '',
-      receivedAt: Date.now(),
-      ope: 'RECEIVE_VOCABULARY'
   }
 }
 
@@ -350,36 +370,41 @@ export function registerUser(nome, cognome, username, email, pw, pw2) {
   };
   return dispatch => {
     dispatch(requestRegistration())
-    var reg = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[a-zA-Z0-9%@#,;:_'/<([{^=$!|}.>-]{8,}$")    
-    if(reg.test(pw)){
-       if(pw===pw2){
-      return fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'      
-        },
-        body: JSON.stringify(input)
-      })
-      .then(response => {
-          if (response.ok) {
-            response.json().then(json => {
-              console.log(json);
-              dispatch(receiveRegistrationSuccess('ok', json))
-            });
-          } else {
-            response.json().then(json => {
-              console.log(json);
-              dispatch(receiveRegistrationSuccess('ko', json))
-            });
-          }
-        })
-      .catch(error => dispatch(receiveRegistrationError(error))) 
+    var reg = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[a-zA-Z0-9%@#,;:_'/<([{^=$!|}.>-]{8,}$")
+    var regUid = new RegExp("^[a-z0-9_]*$")
+    if(regUid.test(username)){
+      if(reg.test(pw)){
+        if(pw===pw2){
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'      
+            },
+            body: JSON.stringify(input)
+          })
+          .then(response => {
+              if (response.ok) {
+                response.json().then(json => {
+                  console.log(json);
+                  dispatch(receiveRegistrationSuccess('ok', json))
+                });
+              } else {
+                response.json().then(json => {
+                  console.log(json);
+                  dispatch(receiveRegistrationSuccess('ko', json))
+                });
+              }
+            }) 
+          .catch(error => dispatch(receiveRegistrationError(error)))
+        } else{
+          dispatch(receiveRegistrationError('I campi Password e Ripeti Password non coincidono'))
+        }
       } else{
-        dispatch(receiveRegistrationError('I campi Password e Ripeti Password non coincidono'))
+        dispatch(receiveRegistrationError('La password inserita non rispetta i criteri. La password inserita deve avere almeno 8 caratteri, una maiuscola ed un numero. I caratteri speciali consentiti sono: "%@#,;:_\'/<([{^=$!|}.>-"'))
       }
-    } else{
-      dispatch(receiveRegistrationError('La password inserita non rispetta i criteri. La password inserita deve avere almeno 8 caratteri, una maiuscola ed un numero. I caratteri speciali consentiti sono: "%@#,;:_\'/<([{^=$!|}.>-"'))
+    }else{
+      dispatch(receiveRegistrationError('Lo username inserito contiene caratteri non consentiti. Sono accettati solo lettere minuscole, numeri e il carattere speciale "_", non sono ammessi gli spazi'))
     }
   }
 }
@@ -442,7 +467,7 @@ export function getAuthToken(username, pw) {
           method: 'GET',
           headers: headers
         })
-        .then(response => response.json())
+        .then(response => response)
   }
 }
 
@@ -476,7 +501,7 @@ export function loginAction() {
             'Authorization': 'Bearer ' + localStorage.getItem('token')
           }
         })
-        .then(response => response.json())
+        .then(response => response)
   }
 }
 
@@ -623,7 +648,6 @@ function receiveResetError(json) {
   }
 }
 
-/******************************** DATASET ************************************** */
 export function fetchProperties(org) {
   var url = serviceurl.apiURLDatiGov + "/settings?domain="+ org
   return dispatch => {
@@ -642,6 +666,67 @@ export function fetchProperties(org) {
   }
 }
 
+/******************************** NOTIFICATIONS ************************************** */
+
+export function fetchNotifications(user, counter){
+  var token = ''
+  var url = serviceurl.apiURLDatiGov +'/notifications/'+user+ (counter?'?limit='+counter:'')
+  if(localStorage.getItem('username') && localStorage.getItem('token') &&
+  localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
+    token = localStorage.getItem('token')
+  }
+  return dispatch => {
+    dispatch(requestNotifications())
+    return fetch(url,{
+      method: 'GET',
+      headers: {
+        /* 'Accept': 'application/json', */
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      }
+    })
+      .then(response => response.json())
+      .then(json => dispatch(receiveNotifications(json)))
+    .catch(error => {
+      console.log('Errore nel caricamento delle notifiche')
+      console.error(error)
+    })
+  }
+}
+
+export function fetchNewNotifications(user){
+  var token = ''
+  var url = serviceurl.apiURLDatiGov +'/notifications/check-new/'+user
+  if(localStorage.getItem('username') && localStorage.getItem('token') &&
+  localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
+    token = localStorage.getItem('token')
+  }
+  return dispatch => {
+    dispatch(requestNewNotifications())
+    return fetch(url,{
+      method: 'GET',
+      headers: {
+        /* 'Accept': 'application/json', */
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      }
+    })
+      .then(response => response.json())
+      .then(json => {
+        dispatch(receiveNewNotifications(json))
+        if(json.length > 0){
+          console.log("nuova-notifica")
+          dispatch(fetchNotifications(user, 20))
+        }
+      })
+    .catch(error => {
+      console.log('Errore nel caricamento delle nuove notifiche')
+      console.error(error)
+    })
+  }
+}
+
+/******************************** DATASET ************************************** */
 function fetchDataset(query, start, owner, category_filter, group_filter, organization_filter, order_filter) {
   var queryurl='';
   var ownerurl='';
@@ -782,7 +867,7 @@ export function getOpendataResources(datasetname) {
 
 export function addDataset(inputJson, token, fileType) {
   console.log("Called action addDataset");
-  var url = serviceurl.apiURLCatalog + "/catalog-ds/add";
+  var url = serviceurl.apiURLCatalog + "/catalog-ds/add-queue";
   return dispatch => {
       return fetch(url, {
           method: 'POST',
@@ -887,17 +972,19 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
         .then(jsonDataset => {
               console.log(jsonDataset)
               if(!jsonDataset.operational.ext_opendata){
+                dispatch(receiveDatasetDetail(jsonDataset))
                 dispatch(getFeedDetail(jsonDataset.dcatapit.owner_org, jsonDataset.dcatapit.name))
                 .catch(error => console.log('Errore durante il caricamento delle info sul feed'))
                 .then(jsonFeed => {
-                  dispatch(getDatasetIframes(jsonDataset.dcatapit.name))
+                  dispatch(getDatasetIframes(jsonDataset.dcatapit.name, jsonDataset.dcatapit.privatex))
                   .catch(error => console.log('Errore durante il caricamento degli iframes associati al dataset'))
-                  .then(jsonIFrames => dispatch(receiveDatasetDetail(jsonDataset, jsonFeed, jsonIFrames, query)))
+                  .then(jsonIFrames => dispatch(receiveDatasetAdditionalDetail(jsonDataset, jsonFeed, jsonIFrames)))
                 })
               }else{
-                dispatch(getDatasetIframes(jsonDataset.dcatapit.name))
+                dispatch(receiveDatasetDetail(jsonDataset))
+                dispatch(getDatasetIframes(jsonDataset.dcatapit.name, jsonDataset.dcatapit.privatex))
                   .catch(error => console.log('Errore durante il caricamento degli iframes associati al dataset'))
-                  .then(jsonIFrames => dispatch(receiveDatasetDetail(jsonDataset, undefined, jsonIFrames, query)))
+                  .then(jsonIFrames => dispatch(receiveDatasetAdditionalDetail(jsonDataset, undefined, jsonIFrames)))
               }
               })
         .catch(error => {
@@ -907,7 +994,7 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
       }
   }
 
-  export function search(query, filter, isPublic) {
+  export function search(query, filter, isPublic, filterInt) {
     var url = serviceurl.apiURLDatiGov + (isPublic?'/public':'')+'/elasticsearch/search'
     return dispatch => {
       dispatch(requestSearch())
@@ -922,16 +1009,21 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
       })
       .then(response => {
           if(response.ok)
-              response.json().then(json => dispatch(receiveSearch(json, query, filter)))
+              response.json().then(json => dispatch(receiveSearch(json, query, filter, filterInt)))
           else dispatch(receiveSearchError(query))
       }).catch(error => console.log('Errore durante la ricerca'))
     }
   }
 
-  export function getDatasetIframes(nomeDataset) {
+  export function getDatasetIframes(nomeDataset, privatex) {
     var token = '';
-    console.log('richiedo gli iframes per il dataset: ' + nomeDataset) 
-    var url = serviceurl.apiURLDatiGov + '/dashboard/iframesByName/' + nomeDataset;
+    console.log('richiedo gli iframes per il dataset: ' + nomeDataset)
+    var url = ''
+    if(privatex){ 
+      url = serviceurl.apiURLDatiGov + '/dashboard/iframesByName/' + nomeDataset;
+    }else{
+      url = serviceurl.apiURLDatiGov + '/dashboard/open-iframesByName/' + nomeDataset;
+    }
     if(localStorage.getItem('username') && localStorage.getItem('token') &&
       localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
         token = localStorage.getItem('token')
@@ -975,7 +1067,7 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
 
     export function checkFileOnHdfs(logical_uri) {
       var token = '';
-      var url = serviceurl.apiURLhdfs + logical_uri + '?op=LISTSTATUS';
+      var url = serviceurl.apiURLHdfs + logical_uri + '?op=LISTSTATUS';
       if(localStorage.getItem('username') && localStorage.getItem('token') &&
         localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
           token = localStorage.getItem('token')
@@ -989,14 +1081,26 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
               'Authorization': 'Bearer ' + token
             }
           })
-          .then(response => response.json())
-          .then(json => json)
+          .then(response => response)
         }
       }
 
-      export function getFileFromStorageManager(logical_uri) {
-        var token = '';
-        var url = serviceurl.apiURLDataset + '/dataset/' + encodeURIComponent(logical_uri);
+      export function getFileFromStorageManager(logical_uri, limit, format, isPublic) {
+        var token = ''
+        var rows = ''
+        var formatType = ''
+        if(limit!==null && limit!==undefined){
+          rows = '?limit='+limit
+        }
+        if(format!==null && format!==undefined){
+          formatType = (rows.length>0?'&':'?') + 'format='+format
+        }
+        var url = ''
+        if(isPublic!==true){
+          url = serviceurl.apiURLDataset + '/dataset/' + encodeURIComponent(logical_uri) + rows + formatType
+        }else if(isPublic===true){
+          url = serviceurl.apiURLDatiGov + '/public/storage-manager/'+ encodeURIComponent(logical_uri) + rows + formatType
+        }
         if(localStorage.getItem('username') && localStorage.getItem('token') &&
           localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
             token = localStorage.getItem('token')
@@ -1010,8 +1114,8 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
                 'Authorization': 'Bearer ' + token
               }
             })
-            .then(response => response.json())
-            .then(json => json)
+            .then(response => response)
+            .catch(error=> console.error(error))
           }
         }
 
@@ -1042,6 +1146,12 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
     var token = '';
     var name = isExtOpendata ? nomeDataset :  org + '_o_' + nomeDataset;
     var url = serviceurl.apiURLDatiGov + '/superset/table/' + name
+
+    /*     if(!isExtOpendata)
+      var url = serviceurl.urlSuperset + '/tablemodelview/api/readvalues?_flt_3_table_name=' + org + '_o_' + nomeDataset
+    else
+      var url = serviceurl.urlSupersetOpen + '/tablemodelview/api/readvalues?_flt_3_table_name=' + nomeDataset */
+
     if(localStorage.getItem('username') && localStorage.getItem('token') &&
       localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
         token = localStorage.getItem('token')
@@ -1061,47 +1171,10 @@ function fetchDatasetDetail(datasetname, query, isPublic) {
 
 /******************************************************************************* */
 
-export function loadOntologies() {
-  console.log('Load Ontologies');
-  /*var url = 'http://localhost:3001/catalog-manager/v1/ontologies';  
-  return dispatch => {
-      return fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      })
-        .then(response => response.json())
-        .then(json => dispatch(receiveOntologies(json)))
-    }*/
-    return dispatch => {
-      dispatch(receiveOntologies(undefined));
-    }
-  }
-
-  export function loadVocabulary() {
-    console.log('Load Vocabulary');
-    /*var url = 'http://localhost:3001/catalog-manager/v1/ontologies';  
-    return dispatch => {
-        return fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(response => response.json())
-          .then(json => dispatch(receiveOntologies(json)))
-      }*/
-      return dispatch => {
-        dispatch(receiveVocabulary(undefined));
-      }
-    }
-
     export function getSchema(filesToUpload, typeFile) {
       console.log('getSchema'); 
       var url = serviceurl.apiURLDatiGov + "/infer/kylo/" + typeFile
+      //var url = 'http://localhost:3001/dati-gov/v1/infer/kylo/csv'
       var token = '';
       if(localStorage.getItem('username') && localStorage.getItem('token') &&
         localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
@@ -1170,4 +1243,464 @@ export function loadOntologies() {
           .then(response => response.json())
         }
       }
+
+      export function updateNotifications(unreadNotifications){
+        var url = serviceurl.apiURLDatiGov + '/notifications/update'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              //'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            }, 
+            body: JSON.stringify(unreadNotifications)
+          })
+          .then(response => response.json())
+        }
+      }
       
+      export function getDatasetACL(datasetname){
+        var url = serviceurl.apiURLSecurity + '/daf/datasetACL/' + datasetname
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+        
+        return dispatch => {
+          return fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            }
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function setDatasetACL(datasetname, groupname){
+        var url = serviceurl.apiURLSecurity + '/daf/datasetACL/' + datasetname + '/setPermission'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        var payload = {
+          "groupName": groupname,
+          "groupType": "group",
+          "permission": "rwx"
+        }
+        
+        return dispatch => {
+          return fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(payload)
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function deleteDatasetACL(datasetname, groupname){
+        var url = serviceurl.apiURLSecurity + '/daf/datasetACL/' + datasetname + '/deletePermission'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        var payload = {
+          "groupName": groupname,
+          "groupType": "group",
+        }
+        
+        return dispatch => {
+          return fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(payload)
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function uploadHdfsFile(url, file){
+        var token = '' 
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Authorization': 'Bearer ' + token
+            },
+            body: file
+          })
+          .then(response => response)
+        }
+      }
+
+      export function groupsInfo(groups){
+        var url = serviceurl.apiURLSecurity + '/daf/getGroupsInfo'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(groups)
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function getSupersetOpenCookie() {
+        console.log("Called getSupersetOpenCookie");
+        var url = serviceurl.apiURLSSOManager + '/secured/bi-open-loginH'
+        return dispatch => {
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  //'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+              })
+              .then(response => response.text())
+              .catch(error => JSON.parse("{}"))
+        }
+      }
+
+      export function getSubscriptions(user){
+        var url = serviceurl.apiURLDatiGov + '/subscribe/'+user
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function deleteAllSubscriptions(user){
+        var url = serviceurl.apiURLDatiGov + '/unsubscribe/'+user
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'DELETE',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function deleteSubscription(subscription){
+        var url = serviceurl.apiURLDatiGov + '/unsubscribe'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'DELETE',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(subscription)
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function publishOnCKAN(dataset){
+        var url = serviceurl.apiURLCatalog + '/ckan-geo/add'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        var input_src = 'json'
+        if(dataset.operational.input_src){
+          for(var key in dataset.operational.input_src){
+            if (dataset.operational.input_src[key]!==null){
+              if(!dataset.operational.input_src[key][0].param && dataset.operational.input_src[key][0].param===''){
+                input_src = "json"
+              }
+              else if(key==="sftp"){
+                input_src = dataset.operational.input_src[key][0].param.split('=')[1]
+              }
+              else{
+                input_src = dataset.operational.input_src[key][0].param
+              }
+            }
+          }
+        }
+
+        var resUrl = serviceurl.apiURLDatiGov + '/public/storage-manager/'+ encodeURIComponent(dataset.operational.logical_uri) + '?format='+input_src
+
+        dataset.dcatapit.resources = [{
+          "mimetype" : input_src==="json"?"application/json":"text/csv",
+          "cache_url" : null,
+          "hash" : "",
+          "description" : dataset.dcatapit.notes,
+          "name" : dataset.dcatapit.title,
+          "format" : input_src.toUpperCase(),
+          "url" : resUrl,
+          "cache_last_updated" : null,
+          "uri" : resUrl,
+          "state" : "active",
+          "mimetype_inner" : null,
+          "last_modified" : null,
+          "id" : "",
+          "position" : 0,
+          "package_id" : "",
+          "url_type" : null,
+          "revision_id" : "",
+          "resource_type" : null,
+          "size" : null
+        }]
+        
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(dataset.dcatapit)
+          })
+          .then(response => response)
+        }
+      }
+
+      export function deleteOnCKAN(dcatapit){
+        var url = serviceurl.apiURLCatalog + '/ckan-geo/delete'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(dcatapit)
+          })
+          .then(response => response)
+        }
+      }
+
+      export function deleteDataset(nomeDataset, org){
+        var url = serviceurl.apiURLCatalog + 'catalog-ds/delete/'+nomeDataset+'/'+org
+
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'DELETE',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            }
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function sendNotification(title, description, group, link){
+        var url = serviceurl.apiURLCatalog + '/kafka/notifications/add'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        var json = {
+          "topicName": "notification",
+          "description": description,
+          "title": title,
+          "group": group,
+          "link": link,
+          "notificationType": "generic"
+        }
+
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(json)
+          })
+        .then(response => response.json())
+        }
+      }
+
+      export function getAllOrganizations(){
+        var url = serviceurl.apiURLSecurity + '/daf/organizations'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function loadVocabulary(value){
+        var url = 'https://api.daf.teamdigitale.it/daf-configurator/v2/vocabulary/dafvoc-ingestionform-option'
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            }
+          })
+          .then(response => response)
+        }
+      }
+
+      export function getTableId(tableName, orgs){
+        var url = serviceurl.apiURLDatiGov + '/dashboard/superset/tables/'+tableName
+        var token = ''
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') &&
+        localStorage.getItem('username') != 'null' && localStorage.getItem('token') != 'null'){
+          token = localStorage.getItem('token')
+        }
+
+        return dispatch => {
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(orgs)
+          })
+          .then(response => response.json())
+        }
+      }
+
+      export function launchQueryOnStorage(logical_uri, query) {
+        var token = ''
+        var url = serviceurl.apiURLDataset + '/dataset/' + encodeURIComponent(logical_uri) +'/search'
+
+        if(localStorage.getItem('username') && localStorage.getItem('token') && localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null'){
+          token = localStorage.getItem('token')
+        }
+        return dispatch => {
+            return fetch(url, {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify(query)
+            })
+            .then(response => response)
+            .catch(error=> console.error(error))
+          }
+        }

@@ -1,8 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { changePwd } from './../../actions.js'
-import PropTypes from 'prop-types'
-import OverlayLoader from 'react-overlay-loading/lib/OverlayLoader'
 import { toastr } from 'react-redux-toastr'
 
   function setErrorMsg(messaggio) {
@@ -83,17 +81,17 @@ class ConfirmReset extends Component {
                 }else{
                   response.json().then(json => {
                     if(json.code===1){
-                      toastr.danger('Errore', json.message, {timeOut:0})
+                      toastr.error('Errore', json.message, {timeOut:0})
                       /* this.setState(setErrorMsg(json.message)) */
                     }else{
                       /* this.setState(setErrorMsg('Errore durante il salvataggio.')) */
-                      toastr.danger('Errore', 'Errore durante il salvataggio.', {timeOut: 0 })
+                      toastr.error('Errore', 'Errore durante il salvataggio.', {timeOut: 0 })
                     }
                   });
                 }
             }).catch((error) => {
               /* this.setState(setErrorMsg('Errore durante il salvataggio.')) */
-              toastr.danger('Errore', 'Errore durante il salvataggio.')
+              toastr.error('Errore', 'Errore durante il salvataggio.')
             })
           }else{
             this.setState(setErrorMsg('Le password inserite non corrispondono'))
@@ -182,12 +180,6 @@ class ConfirmReset extends Component {
       </div>
     )
   }
-}
-
-ConfirmReset.propTypes = {
-  messaggio: PropTypes.string,
-  error: PropTypes.number,
-  dispatch: PropTypes.func.isRequired
 }
 
 function mapStateToProps(state) {

@@ -1,4 +1,4 @@
-import React, { Component, PropTypes } from 'react'
+import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import { serviceurl } from '../../../../config/serviceurl'
 
@@ -62,7 +62,7 @@ class IframeWidget extends Component {
       )
     }else{
       return (
-        <img className="h-100 w-100" src={"data:image/jpg;base64," + this.state.imageSrc} alt={this.props.identifier}/>
+        <img className="h-100 w-100" src={"https://s3-eu-west-1.amazonaws.com/dafimgs/"+this.props.identifier+".png"} alt={this.props.identifier}/>
       )
     }
   }

@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
 import WizardFormFirstPage from './WizardFormFirstPage'
 import WizardOperational from './WizardOperational'
 import WizardFormMetadata from './WizardFormMetadata'
@@ -7,6 +6,8 @@ import {getJsonDataschema} from './inputform_reader.js'
 import { connect } from 'react-redux'
 import licenze from '../../data/licenze'
 import themes from '../../data/themes'
+import { getEditorAdminOrganizations } from '../../utility'
+
 import Steps, { Step } from 'rc-steps';
 import {
   Modal,
@@ -20,7 +21,7 @@ import {
 import 'rc-steps/assets/index.css'
 import 'rc-steps/assets/iconfont.css'
 
-const steps = [{'title': 'Carica file e descrivi le colonne'},{'title': 'Aggiuungi i Metadati'},{'title': 'Modalità di invio'}]
+const steps = [{'title': 'Carica file e descrivi le colonne'},{'title': 'Aggiungi i Metadati'},{'title': 'Modalità di invio'}]
 
 class WizardForm extends Component {
   constructor(props) {
@@ -142,7 +143,7 @@ class WizardForm extends Component {
                 {page ===1 &&  <WizardFormFirstPage
                       previousPage={this.previousPage}
                       onSubmit={this.nextPage}
-                      organizations={loggedUser.organizations}
+                      organizations={getEditorAdminOrganizations(loggedUser)}
                       licenze={licenze}
                       openModal={this.openModal}
                   />}
@@ -199,13 +200,6 @@ class WizardForm extends Component {
       </div>
     )
   }
-}
-
-WizardForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-  loggedUser: PropTypes.object,
-  organizations: PropTypes.array,
-  saving: PropTypes.bool
 }
 
 function mapStateToProps(state) {

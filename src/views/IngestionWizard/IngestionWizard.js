@@ -1,15 +1,13 @@
 import React, { Component } from 'react';
 import {createMetacatalog} from '../../helpers/TrasformFormToDcat.js'
 import WizardForm from '../../components/IngestionWizard/WizardForm'
-import { addDataset, addDatasetKylo } from './../../actions.js'
+import { addDataset } from './../../actions.js'
 import {reset} from 'redux-form';
 import { connect } from 'react-redux'
-import PropTypes from 'prop-types'
 import {
   Modal,
   ModalHeader,
   ModalTitle,
-  ModalClose,
   ModalBody,
   ModalFooter
 } from 'react-modal-bootstrap'
@@ -56,13 +54,20 @@ hideModalAndRedirect = (e) => {
   this.props.history.push('/private/home')
 };
 
-  /*  showResults = values =>{
-    const transformed = transformer(values)
-    console.log(transformed)
-    toastr.success('Complimenti', 'Il caricamento dei metadati è avvenuto con successo')
+ /*   showResults = values =>{
+    this.setState({
+      saving: true
+    })
+    setTimeout(() => {
+      const transformed = transformer(values)
+      console.log(transformed)
+      toastr.success('Complimenti', 'Il caricamento dei metadati è avvenuto con successo')
+      this.setState({saving: false})
+      
+    }, 1000);
   }  */
 
-     showResults = values =>{
+      showResults = values =>{
       this.setState({
         saving: true
       })
@@ -76,8 +81,14 @@ hideModalAndRedirect = (e) => {
         dispatch(addDataset(transformed, localStorage.getItem('token'), fileType))
         .then(response => {
           if(response.ok){
-            console.log('Caricamento metadati avvenuto con successo')
-            dispatch(addDatasetKylo(transformed, localStorage.getItem('token'), fileType))
+            console.log('La richiesta di creazione è avvenuta con successo. Riceverai una notifica a creazione completata')
+            this.setSending(false, undefined);
+            localStorage.removeItem('kyloSchema')
+            this.setState({saving: false})
+            toastr.success('Complimenti', "La richiesta di creazione è avvenuta con successo. Riceverai una notifica a creazione completata", {timeOut: 20000})
+            this.props.history.push('/private/home')
+            //this.props.history.push('/private/dataset/' + transformed.dcatapit.name)
+            /* dispatch(addDatasetKylo(transformed, localStorage.getItem('token'), fileType))
             .then((response) => {
               if(response.ok){
                 this.setSending(false, undefined);
@@ -97,7 +108,7 @@ hideModalAndRedirect = (e) => {
               this.setState({msg: '', msgErr:'Errore durante il caricamento de dataset'})
               this.setState({saving: false})
             })
-            console.log('invio effettuato');
+            console.log('invio effettuato'); */
           }else{
             this.setSending(false, 'Errore durante il caricamento del dataset. riprovare più tardi.');
             console.log('Errore durante il caricamento dei metadati')
@@ -110,7 +121,7 @@ hideModalAndRedirect = (e) => {
           console.log('token non presente');
           this.setState({saving: false})
         }
-      } 
+      }  
 
 
   render() {
@@ -158,13 +169,6 @@ hideModalAndRedirect = (e) => {
     </div>
     )
   }
-}
-
-IngestionForm.propTypes = {
-  msg: PropTypes.string,
-  dispatch: PropTypes.func.isRequired,
-  resetForm: PropTypes.func,
-  loggedUser: PropTypes.object
 }
 
 function mapStateToProps(state) {

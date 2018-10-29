@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { getAuthToken, loginAction, isValidToken, logout, getApplicationCookie, receiveLogin } from './../../actions.js'
-import PropTypes from 'prop-types'
 import {
   Modal,
   ModalHeader,
@@ -10,13 +9,22 @@ import {
   ModalBody,
   ModalFooter
 } from 'react-modal-bootstrap';
-import { serviceurl } from '../../config/serviceurl.js'
-import { setCookie } from '../../utility'
+import { setCookie, setSupersetCookie } from '../../utility'
 import OverlayLoader from 'react-overlay-loading/lib/OverlayLoader'
 
 function setErrorMsg(error) {
   return {
     loginMessage: error
+  }
+}
+
+function postUserToSw(username){
+  if('serviceWorker' in navigator){
+    const msg = {
+      'type': 'register_user',
+      'username': username
+    }
+    navigator.serviceWorker.controller.postMessage(msg);
   }
 }
 
@@ -29,7 +37,8 @@ class Login extends Component {
       loading: true,
       isOpen: false,
       loginMessage: null,
-      uploading: false
+      uploading: false,
+      token: ''
     }
   }
 
@@ -50,7 +59,7 @@ class Login extends Component {
                   dispatch(getApplicationCookie('superset'))
                   .then(json => {
                     if (json) {
-                      setCookie(json)
+                      setSupersetCookie(json)
                     }
                   })
                   dispatch(getApplicationCookie('metabase'))
@@ -59,12 +68,12 @@ class Login extends Component {
                       setCookie(json)
                     }
                   })
-                  dispatch(getApplicationCookie('jupyter'))
+                  /* dispatch(getApplicationCookie('jupyter'))
                   .then(json => {
                     if (json) {
                       setCookie(json)
                     }
-                  })
+                  }) */
                   /* dispatch(getApplicationCookie('grafana'))
                   .then(json => {
                     if (json) {
@@ -72,15 +81,26 @@ class Login extends Component {
                     }
                   }) */
                   dispatch(loginAction())
-                    .then(json => {
+                  .then(response => {
+                    if (response.ok) {
+                      response.json().then(json => {
                         dispatch(receiveLogin(json))
                         /* dispatch(addUserOrganization(json.uid)) */
                         this.setState({
                             authed: true,
                             loading: false
                           })
+                        //postUserToSw(json.uid)
                         this.props.history.push('/private/home')
                   })
+                  } else {
+                    console.log('Login Action Response: ' + response.statusText)
+                    this.setState({
+                      authed: false,
+                      loading: false
+                    })
+                  }
+                })
                 } else {
                   this.setState({
                     authed: false,
@@ -117,14 +137,16 @@ class Login extends Component {
     })
     var token=''
     dispatch(getAuthToken(this.email.value, this.pw.value))
-      .then(json => {
+    .then(response => {
+      if (response.ok) {
+        response.json().then(json => {
             localStorage.setItem('token', json);
             token = json;
             dispatch(getApplicationCookie('superset'))
             .then(json => {
               if (json) {
-              setCookie(json)
-              dispatch(getApplicationCookie('metabase'))
+                setSupersetCookie(json)
+                dispatch(getApplicationCookie('metabase'))
                 .then(json => {
                   if (json) {
                     setCookie(json)
@@ -138,13 +160,34 @@ class Login extends Component {
                               if (json) {
                                 setCookie(json) */
                                 dispatch(loginAction())
-                                  .then(json => {
+                                .then(response => {
+                                  if (response.ok) {
+                                    response.json().then(json => {
+
                                     localStorage.setItem('user', json.uid);
                                     let dataportalCookie = json.givenname +'/'+token;
                                     setCookie(JSON.parse('[{"name":"dataportal","value":"'+ dataportalCookie +'","path":"/"}]'))
                                     dispatch(receiveLogin(json))
-                                    this.props.history.push('/private/home')
+                                    if(window.location.href.indexOf('?')>-1){
+                                      let array = window.location.href.split('?')
+                                      //this.props.history.push(array[1])
+                                      if(array[1].indexOf('login')>-1){
+                                        this.props.history.push('/private/home')  
+                                      }else{
+                                        window.location.replace(array[1]);
+                                      }
+                                    }else{
+                                      this.props.history.push('/private/home')
+                                    }
                                   })
+                                }else{
+                                  console.log('Login Action Response: ' + response.statusText)
+                                  this.setState({
+                                    loginMessage: 'Errore durante il login. Si prega di riprovare più tardi.',
+                                    uploading: false
+                                  })
+                                }
+                              })
                               //}
                             //})
                        // }
@@ -153,12 +196,23 @@ class Login extends Component {
                 })
               }
             })
-          }).catch((error) => {
-              this.setState({
-                loginMessage: 'Nome utente o password non corretto.',
-                uploading: false
-              })
+          })
+        }else{
+          console.log('Get Autentication Token Response: ' + response.statusText)
+          response.json().then(json => {
+            console.log('Get Autentication Token json: ' + JSON.stringify(json))
+          })
+          this.setState({
+            loginMessage: 'Errore durante il login. Si prega di riprovare più tardi.',
+            uploading: false
+          })
+        }
+        }).catch((error) => {
+            this.setState({
+              loginMessage: 'Nome utente o password non corretto.',
+              uploading: false
             })
+          })
   }
 
   openModal = () => {
@@ -176,15 +230,15 @@ class Login extends Component {
   render() {
     return (this.state.loading? <h1 className="text-center fixed-middle"><i className="fas fa-circle-notch fa-spin mr-2"/>Caricamento</h1> :
       <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-md-8">
+        <div className="row">
+          <div className="col-md-8 mx-auto">
               <div className="card-group mb-0">
                 <div className="card p-2">
                   <div className="card-block">
                   
                   <OverlayLoader
-                    color={'#06c'}
-                    loader="ScaleLoader"
+                    color={'#fff'}
+                    loader="ClipLoader"
                     text="Caricamento in corso..."
                     active={this.state.uploading}
                     backgroundColor={'grey'}
@@ -197,8 +251,7 @@ class Login extends Component {
                         {this.state.loginMessage}
                       </div>
                     }
-
-
+                    <form onSubmit={this.handleSubmit.bind(this)}>  
                       <div className="input-group mb-1" style={{position: 'initial'}}>
                         <span className="input-group-text">
                           <i className="icon-user"></i>
@@ -207,7 +260,7 @@ class Login extends Component {
                           style={{position: 'initial', zIndex: 'initial'}}/>
                       </div>
                     
-                      <form onSubmit={this.handleSubmit.bind(this)}>
+                                          
                       <div className="input-group mb-2" style={{ position: 'initial' }}>
                         <span className="input-group-text">
                           <i className="icon-lock"></i>
@@ -215,16 +268,17 @@ class Login extends Component {
                         <input type="password" className="form-control" placeholder="Password" ref={(pw) => this.pw = pw}
                           style={{ position: 'initial', zIndex: 'initial' }}/>
                       </div>
-                      </form>
+                      
                    
                       <div className="row">
                         <div className="col-6" style={{ position: 'initial' }}>
-                          <button type="button" className="btn btn-primary px-2" onClick={this.handleSubmit.bind(this)}>Login</button>
+                          <input type="submit" className="btn btn-primary px-2" onClick={this.handleSubmit.bind(this)} value="Login"/>
                         </div>
                         <div className="col-6 text-right" style={{ position: 'initial' }}>
-                        <button type="button" className="btn btn-link px-0" onClick={() => this.props.history.push('/requestreset')}>Password dimenticata?</button>
+                        <button type="button" className="btn btn-link text-primary px-0" onClick={() => this.props.history.push('/requestreset')}>Password dimenticata?</button>
                         </div>
                       </div>
+                    </form>
                     
                   </OverlayLoader>
                     
@@ -244,11 +298,6 @@ class Login extends Component {
       </div>
     )
   }
-}
-
-Login.propTypes = {
-  user: PropTypes.object,
-  dispatch: PropTypes.func.isRequired
 }
 
 function mapStateToProps(state) {

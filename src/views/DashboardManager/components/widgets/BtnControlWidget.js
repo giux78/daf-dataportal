@@ -1,8 +1,5 @@
 import React from 'react';
-import { Bar } from 'react-chartjs';
-import { getRandomInt } from './util';
 import {Modal} from 'react-modal-bootstrap';
-import AddWidgetDialog from '../AddWidgetDialog';
 import App from '../InfinityScrollWidgets/App.js'
 
 class BtnControlWidget extends React.Component {
@@ -193,14 +190,6 @@ class BtnControlWidget extends React.Component {
                 onWidgetSelect={this.addWidget}
                 onRequestClose={this.onRequestClose}
                     />
-
-                {/*<AddWidgetDialog
-                    widgets={this.props.widgets}
-                    isModalOpen={this.state.isModalAddOpen}
-                    onWidgetSelect={this.addWidget}
-                    onRequestClose={this.onRequestClose}
-                    >
-                </AddWidgetDialog> */}
 
                 <Modal
                     contentLabel="Set width columns"
