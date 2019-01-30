@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { NavLink, Link } from 'react-router-dom'
 import { connect } from 'react-redux'
+import { reset } from 'redux-form'
 import {
   Modal,
   ModalHeader,
@@ -110,7 +111,7 @@ class Sidebar extends Component {
   }
 
   createWidget(){
-    this.props.openModalWidget();
+    this.props.history.push('/private/charts')
   }
 
   render() {
@@ -172,14 +173,14 @@ class Sidebar extends Component {
                     e.preventDefault();
                     document.body.classList.toggle('sidebar-mobile-show');
                   }}>
-                    <Link to={'/private/ingestionwizzard'} className="nav-link"><i className="fas fa-table fa-lg text-secondary"/>  Nuovo Dataset</Link>
+                    <a onClick={()=>{ const{ dispatch } = this.props; dispatch(reset('wizard')); this.props.history.push('/private/ingestionwizzard');}} className="nav-link"><i className="fas fa-table fa-lg text-secondary"/>  Nuovo Dataset</a>
                   </li>}
-                  <li className="nav-item" onClick={(e) => {
+                  {/* <li className="nav-item" onClick={(e) => {
                     e.preventDefault();
                     document.body.classList.toggle('sidebar-mobile-show');
                   }}>
                     <a href className="nav-link " onClick={this.createWidget.bind(this)}><i className="fas fa-columns fa-lg text-secondary" />  Nuovo Widget</a>
-                  </li>
+                  </li> */}
                   <li className="nav-item" onClick={(e) => {
                     e.preventDefault();
                     document.body.classList.toggle('sidebar-mobile-show');

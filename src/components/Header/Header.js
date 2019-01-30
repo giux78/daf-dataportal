@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux'
+import { reset } from 'redux-form'
 import fontawesome from '@fortawesome/fontawesome'
 import FontAwesomeIcon from '@fortawesome/react-fontawesome'
 import { faGlobe } from '@fortawesome/fontawesome-free-solid'
@@ -23,7 +24,7 @@ class Header extends Component {
 			this.toggleCrea = this.toggleCrea.bind(this)
 			this.mobileSidebarToggle = this.mobileSidebarToggle.bind(this)
 			this.createDash = this.createDash.bind(this)
-			this.createWidget = this.createWidget.bind(this)
+			// this.createWidget = this.createWidget.bind(this)
       this.createStory = this.createStory.bind(this)
       this.closeMenu = this.closeMenu.bind(this)
       this.toggleAsideMenu = this.toggleAsideMenu.bind(this)
@@ -149,7 +150,7 @@ class Header extends Component {
 		}
 
 		createWidget(){
-			this.props.openModalWidget();
+			this.props.history.push('/private/charts');
 			this.toggleCrea()
 		}
 
@@ -246,8 +247,8 @@ class Header extends Component {
 								<button className="w-100 h-100 btn btn-header" onClick={/* this.crea.bind(this) */this.toggleCrea}><i className="fa fa-plus fa-lg"/></button>
 								<div className={"dropdown-menu m-0 dropdown-menu-right "+ crea} aria-labelledby="dropdownMenuButton">
 									<h6 className="dropdown-header text-center"><b>Crea</b></h6>
-									{(isEditor(loggedUser) || isAdmin(loggedUser)) && <button className="dropdown-item" onClick={()=> { this.props.history.push('/private/ingestionwizzard'); this.toggleCrea}}><i className="fa fa-table"></i> Nuovo Dataset</button>}
-									<button className="dropdown-item" onClick={this.createWidget} ><i className="fa fa-chart-bar"></i> Nuovo Widget</button>
+									{(isEditor(loggedUser) || isAdmin(loggedUser)) && <button className="dropdown-item" onClick={()=> { const{ dispatch } = this.props; dispatch(reset('wizard')); this.props.history.push('/private/ingestionwizzard'); this.toggleCrea}}><i className="fa fa-table"></i> Nuovo Dataset</button>}
+									{/* <button className="dropdown-item" onClick={this.createWidget} ><i className="fa fa-chart-bar"></i> Nuovo Widget</button> */}
 									<button className="dropdown-item" onClick={this.createDash} ><i className="fa fa-columns"></i> Nuova Dashboard</button>
 									<button className="dropdown-item" onClick={this.createStory} ><i className="fa fa-font"></i> Nuova Storia</button>
 							</div>

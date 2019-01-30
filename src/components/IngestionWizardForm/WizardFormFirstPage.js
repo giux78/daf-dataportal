@@ -2,12 +2,13 @@ import React from 'react'
 import { Field, FieldArray, reduxForm, formValueSelector } from 'redux-form';
 import { connect  } from 'react-redux';
 import { renderFieldInput, renderFieldTextArea, renderFieldSelect, renderFieldTags, renderFieldInputButton, renderFieldCheckbox, renderFieldCategoria} from './renderField';
+import asyncValidate from './asyncValidate';
 import validate from './validate';
 import FileInput from './FileInput'
 import Query from './Query'
 
 
-const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCategoria, filePullLoaded, sottocategoria, tipodataset, modalitacaricamento, tipofile, addTagsToForm, tempopolling, nomefile, urlws, reset, errorNext, getSchemaFromWS, query, setQuery, resultQuery, executeQuery, resetQueryValue, openModalInfo, config, meta : {touched, error} }) => <div>
+const renderFieldArray = ({fields, setName, onDropFunction, handleSubmit, setTemplate, uploading, getCategoria, filePullLoaded, sottocategoria, tipodataset, modalitacaricamento, tipofile, addTagsFiletagsToForm, tempopolling, nomefile, urlws, reset, errorNext, getSchemaFromWS, query, setQuery, resultQuery, executeQuery, resetQueryValue, openModalInfo, config, meta : {touched, error} }) => <div>
             <Field
               name="titolo"
               component={renderFieldInput}
@@ -24,14 +25,14 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
               openModalInfo={openModalInfo}
               config={config}
             />
-            <Field
+{/*             <Field
               name="public"
               options={config['dafvoc-ingform-dataset_visibility']}
               component={renderFieldSelect}
               label="Pubblico/OpenData"
               openModalInfo={openModalInfo}
               config={config}
-            />
+            /> */}
              <Field
               name="descrizione"
               component={renderFieldTextArea}
@@ -61,11 +62,11 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
               name="filetags"
               component={renderFieldTags}
               label="Tags"
-              addTagsToForm={addTagsToForm}
+              addTagsToForm={addTagsFiletagsToForm}
               openModalInfo={openModalInfo}
               config={config}
             />
-            <Field
+{/*             <Field
               name="template"
               options={config['dafvoc-ingform-template']}
               component={renderFieldSelect}
@@ -73,15 +74,8 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
               onChange={setTemplate}
               openModalInfo={openModalInfo}
               config={config}
-            />
-            <Field
-              name="tipofile"
-              options={config['dafvoc-ingform-filetype']}
-              component={renderFieldSelect}
-              label="Tipo di File"
-              openModalInfo={openModalInfo}
-              config={config}
-            />
+            /> */}
+
             <Field
               name="tipodataset"
               options={config['dafvoc-ingform-newtype']}
@@ -92,6 +86,14 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
             />
             {tipodataset=='primitive' &&
               <div>
+                 <Field
+                  name="tipofile"
+                  options={config['dafvoc-ingform-filetype']}
+                  component={renderFieldSelect}
+                  label="Tipo di File"
+                  openModalInfo={openModalInfo}
+                  config={config}
+                />
                 <Field
                   name="modalitacaricamento"
                   options={config['dafvoc-ingform-ingest_type']}
@@ -101,21 +103,22 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                   config={config}
 
                 />
-                {modalitacaricamento=='sftp' && 
+                {(modalitacaricamento=='sftp' || modalitacaricamento=='webservice_push')&& 
                 <div className="card">
                 <div className="card-body">
-                <h5 className="card-title">Caricamento tramite SFTP</h5>
+                <h5 className="card-title">Caricamento tramite SFTP / API PUT</h5>
                     <div className="form-group">
                       <div className="col-md-12">
-                          <Field
+                          <p>Definisci lo schema del tuo Dataset caricando un sample (max 1MB), il file completo lo potrai caricare in seguito:</p>
+                          <h5>Tempo di polling</h5>
+                          {/* <Field
                             name="caricafile"
                             component={renderFieldCheckbox}                
                             label="Caricare il file al termine della metadatazione"
                             openModalInfo={openModalInfo}
                             config={config}
-
-                          />
-                          <Field
+                          /> */}
+                          {/* <Field
                             name="tempopolling"
                             options={config['tempoDiPollingOptions']}
                             component={renderFieldSelect}
@@ -123,8 +126,8 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                             openModalInfo={openModalInfo}
                             config={config}
 
-                          />
-                          {tempopolling==0 &&
+                          /> */}
+                          {/* tempopolling==0 &&
                               <Field
                                 name="espressionecron"
                                 component={renderFieldInput}
@@ -133,25 +136,23 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                                 config={config}
 
                             />
-                          }
-                          {tempopolling==1 &&
+                           */}
+                          {/* tempopolling==1 && */
                               <div>
-                                <Field
-                                  name="timerquantita"
-                                  component={renderFieldInput}
-                                  label="Quantità"
-                                  openModalInfo={openModalInfo}
-                                  config={config}
-
-                                />
-                                    <Field
+                                  <Field
                                     name="timerunita"
                                     options={config['timerUnita']}
                                     component={renderFieldSelect}
                                     label="Unità"
                                     openModalInfo={openModalInfo}
                                     config={config}
-
+                                />
+                                <Field
+                                  name="timerquantita"
+                                  component={renderFieldInput}
+                                  label="Quantità"
+                                  openModalInfo={openModalInfo}
+                                  config={config}
                                 />
                               </div>
                           }
@@ -170,9 +171,10 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                               />
                           </div>
                           :
-                          <FileInput
+                          <Field
                             name="filesftp"
                             label="Caricamento:"
+                            component={FileInput}
                             classNameLabel="file-input-label"
                             className="file-input"
                             dropzone_options={{
@@ -181,9 +183,8 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                             }}
                             onDropFunction={onDropFunction}
                             fields={fields}
-                          >
-                          <span>Add more</span>
-                          </FileInput>
+                            tipofile={tipofile}
+                          />
                            }
                         </div>
                     </div>
@@ -218,14 +219,13 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                           }
                           {tempopolling==1 &&
                               <div>
-                                    <Field
-                                    name="timerunita"
-                                    options={config['timerUnita']}
-                                    component={renderFieldSelect}
-                                    label="Unità"
-                                    openModalInfo={openModalInfo}
-                                    config={config}
-
+                                <Field
+                                  name="timerunita"
+                                  options={config['timerUnita']}
+                                  component={renderFieldSelect}
+                                  label="Unità"
+                                  openModalInfo={openModalInfo}
+                                  config={config}
                                 />
                                 <Field
                                   name="timerquantita"
@@ -233,7 +233,6 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                                   label="Quantità"
                                   openModalInfo={openModalInfo}
                                   config={config}
-
                                 />
                               </div>
                           }
@@ -246,7 +245,7 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
                                 readonly="true"
                                 buttonLabel="Elimina File"
                                 onClick={reset}
-                                iconClassName="fa fa-trash fa-lg"
+                                iconClassName={uploading?"fas fa-circle-notch fa-spin fa-lg":"fa fa-trash fa-lg"}
                                 config={config}
                               />
                         </div>
@@ -273,13 +272,10 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
             }
             {tipodataset=='derived_sql' &&
               <Query 
-                query={query}  
-                config={config}
-                setQuery={setQuery} 
-                resultQuery={resultQuery} 
-                executeQuery={executeQuery} 
-                resetQueryValue={resetQueryValue} 
-                setQuery={setQuery}/>
+                setQuery={setQuery}
+                fields={fields}
+                onDropFunction={onDropFunction} 
+                />
             }
             {tipodataset=='derived_procspark' &&
               <div>
@@ -299,19 +295,19 @@ const renderFieldArray = ({fields, setName, onDropFunction, setTemplate, getCate
             }
             {errorNext && <div className="text-danger">{errorNext}</div>}
             <div>
-                <button type="submit" className="btn btn-primary float-right">Avanti</button>
+                <button type="button" onClick={handleSubmit} className="btn btn-primary float-right">Avanti</button>
             </div>
 </div>
 
 
 
 let WizardFormFirstPage = props => {
-  const { onDropFunction, handleSubmit, reset, categoria, filePullLoaded, tipodataset, setTemplate, addTagsToForm, modalitacaricamento, tempopolling, getCategoria, setName, nomefile, urlws, previousPage, getSchemaFromWS, query, setQuery, resultQuery, executeQuery, resetQueryValue, openModalInfo, errorNext, config, tipofile } = props;
+  const { onDropFunction, handleSubmit, reset, categoria, filePullLoaded, tipodataset, tipofile, setTemplate, addTagsFiletagsToForm, modalitacaricamento, tempopolling, getCategoria, setName, nomefile, urlws, previousPage, getSchemaFromWS, query, setQuery, resultQuery, executeQuery, resetQueryValue, openModalInfo, errorNext, config, uploading } = props;
   var sottocategoria = getCategoria(2,categoria)
   return (
       <div className="mt-5">
         <p className="text-justify"><b>Benvenuto</b> ricordati che a grandi poteri derivano grandi responsabilità</p>     
-        <form onSubmit={handleSubmit} className="mt-5">
+        <form className="mt-5">
             <FieldArray
                   name="inferred"
                   component={renderFieldArray}
@@ -335,11 +331,13 @@ let WizardFormFirstPage = props => {
                   resultQuery={resultQuery}
                   executeQuery={executeQuery}
                   resetQueryValue={resetQueryValue}
-                  addTagsToForm={addTagsToForm}
+                  addTagsFiletagsToForm={addTagsFiletagsToForm}
                   openModalInfo={openModalInfo}
                   config={config}
                   tipofile={tipofile}
                   filePullLoaded={filePullLoaded}
+                  handleSubmit={handleSubmit}
+                  uploading={uploading}
             />
         </form>
       </div>
@@ -351,6 +349,8 @@ WizardFormFirstPage = reduxForm({
   destroyOnUnmount: false,
   forceUnregisterOnUnmount: true,
   validate,
+  asyncValidate,
+  asyncBlurFields: ['titolo']
 })(WizardFormFirstPage);
 
 const selector = formValueSelector('wizard') 

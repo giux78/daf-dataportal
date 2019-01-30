@@ -34,6 +34,19 @@ export const ckanTranslate = [
 
 ]
 
+export const chartType = [
+  {'val':'areachart','name':'Grafico ad Area'},
+  {'val':'barchart','name':'Grafico a barre'},
+  {'val':'linechart', 'name':'Grafico a linea'},
+  {'val':'composedchart', 'name':'Grafico composito (Barre, Area, Linea)'},
+  {'val':'piechart', 'name':'Grafico a torta'},
+  {'val':'radarchart', 'name':'Grafico a radar'},
+  {'val':'radialbarchart', 'name':'Grafico a barre circolari'},
+  {'val':'scatterchart', 'name':'Grafico a dispersione'},
+  {'val':'treemap', 'name':'Grafico Treemap'},
+  {'val':'table', 'name':'Tabella'}]
+  
+
 export const tipi = [{ 'val': 'catalog_test','name': 'Dataset'},{ 'val': 'dashboards','name': 'Dashboard'},{ 'val': 'stories','name': 'Storie'}/* , {'val':'ext_opendata', 'name':'Ext. Opendata'} */]
 
 export const visibilita = [{ 'val': '2','name': 'Open data'},{ 'val': '0','name': 'Privato'},{ 'val': '1','name': 'Organizzazione'}]
@@ -146,7 +159,8 @@ export function transformName(name){
 
   export function getKyloSchema(kyloSchema, value){
     kyloSchema.fields.map((field) => {
-      value.tests.map((value) =>{
+      value['inferred'].map((value) =>{
+      // value.tests.map((value) =>{
         if(value.nome==field.name){
           field.dataTypeWithPrecisionAndScale=value.tipo
           field.derivedDataType=value.tipo
@@ -323,3 +337,100 @@ export function transformName(name){
   export default themes
 
   export default tipi */
+
+  const operators = [
+    {"key": ">", "value": "gt"},
+    {"key": ">=", "value": "gte"},
+    {"key": "<", "value": "lt"},
+    {"key": "<=", "value": "gte"},
+    {"key": "=", "value": "eq"},
+    {"key": "!=", "value": "neq"}
+  ]
+
+  function decodeOperator(value){
+    var found=value
+    for(var i = 0; i < operators.length; i++) {
+      if (operators[i].key == value) {
+          found = operators[i].value
+          break
+      }
+    }
+    return found
+  }
+
+  function translateRule(rule, fromDataschema, joinDataschema){
+    var res = {}
+    var operator = decodeOperator(rule.operator)
+    if(rule.field.indexOf('T1')>-1 && rule.field.indexOf('JT1')===-1){
+      var name = rule.field.replace('T1.', '')
+      var fields = fromDataschema.filter(field =>{
+        return field.name === name
+      })
+      if(fields[0].type==="string"){
+        res[operator] = {"left": rule.field, "right": "'"+rule.value+"'"}
+      }else{
+        res[operator] = {"left": rule.field, "right": rule.value}
+      }
+    }else if(rule.field.indexOf('JT1')>-1){
+      var name = rule.field.replace('JT1.', '')
+      var fields = joinDataschema.filter(field =>{
+        return field.name === name
+      })
+      if(fields[0].type==="string"){
+        res[operator] = {"left": rule.field, "right": "'"+rule.value+"'"}
+      }else{
+        res[operator] = {"left": rule.field, "right": rule.value}
+      }
+    }else{
+      var fields = fromDataschema.filter(field =>{
+        return field.name === rule.field
+      })
+      if(fields[0].type==="string"){
+        res[operator] = {"left": rule.field, "right": "'"+rule.value+"'"}
+      }else{
+        res[operator] = {"left": rule.field, "right": rule.value}
+      }
+    }
+
+    return res
+  }
+
+  export function rulesConverter(combinator, rules, from, join){
+    var result = {}
+    if(rules.length===1){
+      result = translateRule(rules[0], from.dataschema.flatSchema, join?join.dataschema.flatSchema:undefined)
+    }
+    else if(rules.length>1){
+      result[combinator] = []
+      for(var i in rules){
+        if(!rules[i].rules){
+          result[combinator].push(translateRule(rules[i], from.dataschema.flatSchema, join?join.dataschema.flatSchema:undefined))
+        }else{
+          result[combinator].push(rulesConverter(rules[i].combinator, rules[i].rules))
+        }
+      }
+    }
+
+    return(result)
+  }
+
+  export function jsonToCSV(array){
+    var csv = ''
+    var h = Object.keys(array[0])
+
+    csv = h.join(',') + '\n'
+
+    array.map((obj)=>{
+      var i = 0
+      for (var k in obj){
+        if(i===h.length-1){
+          csv += obj[k] + '\n'
+        }else{
+          csv += obj[k] + ','
+        }
+        i++
+      }
+    })
+
+    return csv
+  }

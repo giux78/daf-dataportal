@@ -16,14 +16,14 @@ const renderError = ({ meta: { touched, error } }) =>
 
   
 let WizardFormSecondPage = props => {
-  const { fields, handleSubmit, addTagsToForm, previousPage, tipi, openModalInfo, getFormValue, aggiornaStato, config, addSemanticToForm, addConvenzioneToForm, deleteConvenzioneToForm, addGerarchiaToForm, deleteGerarchiaToForm, context, listaConvenzioni, listaGerarchie, vocabolariControllati } = props;
+  const { fields, handleSubmit, addTagsFieldToForm, previousPage, changeTreeData, openModalInfo, getFormValue, aggiornaStato, config, addSemanticToForm, addConvenzioneToForm, deleteConvenzioneToForm, addGerarchiaToForm, deleteGerarchiaToForm, context, listaConvenzioni, listaGerarchie, vocabolariControllati } = props;
   return (
-     <form onSubmit={handleSubmit} className="col-12 mt-5">
+     <form className="col-12 mt-5">
       {(fields && fields.length > 0) &&
         <FieldArray
               name="inferred"
               component={renderFieldArray}
-              addTagsToForm={addTagsToForm}
+              addTagsFieldToForm={addTagsFieldToForm}
               aggiornaStato={aggiornaStato}
               addSemanticToForm={addSemanticToForm}
               addConvenzioneToForm={addConvenzioneToForm}
@@ -38,17 +38,20 @@ let WizardFormSecondPage = props => {
               getFormValue={getFormValue}
               config={config}
               vocabolariControllati={vocabolariControllati}
+              changeTreeData={changeTreeData}
+              handleSubmit={handleSubmit}
         />
       }
     </form> 
   )}
 
-const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, openModalInfo, addSemanticToForm, addConvenzioneToForm, deleteConvenzioneToForm, config, context, listaConvenzioni, previousPage, vocabolariControllati, meta : {touched, error} }) =>
+const renderFieldArray = ({fields, addTagsFieldToForm, handleSubmit, aggiornaStato, getFormValue, changeTreeData, openModalInfo, addSemanticToForm, addConvenzioneToForm, deleteConvenzioneToForm, config, context, listaConvenzioni, previousPage, vocabolariControllati, meta : {touched, error} }) =>
         <div>
           <GerarchiaCampi 
             fields={fields} 
             getFormValue={getFormValue}
             config={config}
+            changeTreeData={changeTreeData}
           />
           {fields.map((field, index) => {
             var vocabolariocontrollato = fields.get(index).vocabolariocontrollato
@@ -101,19 +104,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                           component={renderFieldTags}
                           label="Tags"
                           value={`${field}.tag`}
-                          addTagsToForm={addTagsToForm}
-                          openModalInfo={openModalInfo}
-                          config={config}
-
-                        />
-                        <Field
-                          name={`${field}.concetto`}
-                          component={AutocompleteSemantic}
-                          label="Concetto"
-                          value={`${field}.concetto`}
-                          addSemanticToForm={addSemanticToForm}
-                          index={index}
-                          aggiornaStato={aggiornaStato}
+                          addTagsToForm={addTagsFieldToForm}
                           openModalInfo={openModalInfo}
                           config={config}
 
@@ -139,7 +130,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                         openModalInfo={openModalInfo}
                         config={config}
                       />
-                       <Field
+                       {/* <Field
                         name={`${field}.vocabolariocontrollato`}
                         options={vocabolariControllati}
                         component={renderFieldSelect}
@@ -148,7 +139,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                         openModalInfo={openModalInfo}
                         config={config}
 
-                      />
+                      /> */}
                       {vocabolariocontrollato &&
                          <Field
                           name={`${field}.campovocabolariocontrollato`}
@@ -172,6 +163,17 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                     </Panel>
                     <Panel header="Semantica e Ontologie">
                       <Field
+                        name={`${field}.concetto`}
+                        component={AutocompleteSemantic}
+                        label="Concetto"
+                        value={`${field}.concetto`}
+                        addSemanticToForm={addSemanticToForm}
+                        index={index}
+                        aggiornaStato={aggiornaStato}
+                        openModalInfo={openModalInfo}
+                        config={config}
+                        />
+                      <Field
                         name={`${field}.contesto`}
                         component={renderContesti}
                         label="Contesto"
@@ -180,9 +182,8 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                         index={index}
                         openModalInfo={openModalInfo}
                         config={config}
-
                       /> 
-                      <Field
+{/*                       <Field
                           name={`${field}.idgruppocampi`}
                           component={renderFieldInput}
                           label="ID Gruppo Campi"
@@ -190,7 +191,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                           openModalInfo={openModalInfo}
                           config={config}
 
-                        />
+                        /> */}
                       <Field
                           name={`${field}.rdfsoggetto`}
                           component={renderFieldInput}
@@ -220,6 +221,15 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                         />
                     </Panel>
                     <Panel header="Informazioni Operazionali">
+                      <Field
+                          name={`${field}.chiave`}
+                          component={renderFieldCheckbox}
+                          label="Campo chiave"
+                          value={`${field}.chiave`}
+                          openModalInfo={openModalInfo}
+                          config={config}
+
+                        />
                       <Field
                           name={`${field}.obbligatorio`}
                           component={renderFieldCheckbox}
@@ -265,7 +275,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                           config={config}
 
                         />
-                         <Field
+{/*                          <Field
                           name={`${field}.entityextraction`}
                           options={config['dafvoc-ingform-dataschema-metadata-field_profile-entity_extr']}
                           component={renderFieldSelect}
@@ -273,7 +283,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
                           value={`${field}.entityextraction`}
                           openModalInfo={openModalInfo}
                           config={config}
-                        />
+                        /> */}
                     </Panel>
                     <Panel header="Dati Personali">
                       <Field
@@ -325,7 +335,7 @@ const renderFieldArray = ({fields, addTagsToForm, aggiornaStato, getFormValue, o
             )}
         <div>
           <button type="button" className="btn btn-primary float-left" onClick={previousPage}>Indietro</button>
-          <button type="submit" className="btn btn-primary float-right">Avanti</button>
+          <button type="button" className="btn btn-primary float-right" onClick={handleSubmit}>Avanti</button>
         </div>
       </div>
 

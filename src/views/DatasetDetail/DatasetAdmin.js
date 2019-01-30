@@ -7,6 +7,7 @@ import {
   groupsInfo,
   datasetDetail,
   deleteOnCKAN,
+  deleteDataset,
   publishOnCKAN,
   sendNotification
 } from '../../actions.js'
@@ -29,11 +30,10 @@ const organizationService = new OrganizationService()
 
 function ableToEdit(user, dataset){
   var able = false
-  if(user.uid === dataset.operational.group_own){
+  if(user.uid === dataset.operational.group_own || user.uid === dataset.dcatapit.author){
     able = true
-  }/* else if((user.roles.indexOf('daf_adm_'+dataset.dcatapit.owner_org)!==-1) || (user.roles.indexOf('daf_edt_'+dataset.dcatapit.owner_org)!==-1)){
-    able = true
-  } */
+  }
+  
   return able
 }
 
@@ -61,6 +61,7 @@ class DatasetAdmin extends Component{
       selectedWg: '',
       saving: false,
       deleting: false,
+      cancella: false,
       isLoading: true
     }
 
@@ -71,7 +72,8 @@ class DatasetAdmin extends Component{
     this.setACL = this.setACL.bind(this)
     this.deleteACL = this.deleteACL.bind(this)
     this.publish = this.publish.bind(this)
-    
+    this.delete = this.delete.bind(this)
+    this.cancellaDataset = this.cancellaDataset.bind(this)
   }
 
   componentDidMount(){
@@ -251,8 +253,7 @@ class DatasetAdmin extends Component{
         console.error(json.message)
       }
       if(json.fields && json.fields==="ok"){
-        toastr.success("Completato", "Permesso rimosso con successo")
-        console.log(json.message)
+
       
         if(groupname==='open_data_group'){
           dispatch(deleteOnCKAN(dataset.dcatapit))
@@ -286,6 +287,8 @@ class DatasetAdmin extends Component{
           })
           .catch(error => console.error(error))
         }else{
+          toastr.success("Completato", "Permesso rimosso con successo")
+          console.log(json.message)
           dispatch(getDatasetACL(dataset.dcatapit.name))
           .then(risp => {
             if(risp.code!==undefined){
@@ -394,10 +397,48 @@ class DatasetAdmin extends Component{
     };
     toastr.confirm(null, toastrConfirmOptions)
   }
+
+  cancellaDataset(datasetName, datasetOrg){
+    const { dispatch } = this.props
+    this.setState({
+      cancella: true
+    })
+    dispatch(deleteDataset(datasetName, datasetOrg))
+    .then(response=>{
+      this.setState({
+        cancella: false
+      })
+      if(response.ok){
+        toastr.success('Completato', 'Cancellazione avvenuta con successo')
+        // this.props.history.push('/private')
+        window.location = "#/private/home"
+      }else{
+        const result = response.json()
+        result.then(json=>{
+          toastr.error("Errore", json.message)
+        })
+      }
+    })
+  }
+
+  delete(datasetName, datasetOrg, datasetTitle){
+    const toastrConfirmOptions = {
+      okText: 'Elimina',
+      cancelText: 'Annulla',
+      onOk: () => this.cancellaDataset(datasetName, datasetOrg),
+      onCancel: () => console.log('CANCEL: clicked'),
+      component: () => (
+        <div className="rrt-message">
+          Sei sicuro di voler eliminare il dataset <b>{datasetTitle}</b> ?
+        </div>
+      )
+    };
+    toastr.confirm(null, toastrConfirmOptions)
+  }
   
   render(){
     const { acl, aggiungi, orgs, workgroups } = this.state
-    const {dataset, loggedUser } = this.props
+    const {dataset, loggedUser, hasPreview } = this.props
     var result = ""
     if(this.state.selectedOrg!=="" && this.state.selectedOrg!==null){
       if(this.state.selectedWg!=="" && this.state.selectedWg!==null){
@@ -406,6 +447,7 @@ class DatasetAdmin extends Component{
         result = <h5>Stai condividendo il dataset con gli utenti dell'organizzazione <b>{this.state.selectedOrg}</b></h5>
       }
     }
+    console.log(hasPreview)
     return(
       <div hidden={!this.props.showAdmin} className="col-12 card-text">
         <Modal
@@ -484,11 +526,7 @@ class DatasetAdmin extends Component{
               </button>
           </ModalFooter>
         </Modal>
-        {/* <div className="col-12 text-muted text-justify mb-4">
-          {ableToEdit( loggedUser, dataset) && <h5>Questa è la pagina di amministrazione del tuo dataset, puoi scegliere con chi condividerlo o rendelo un Open data aperto a tutti</h5>}
-          {!ableToEdit( loggedUser, dataset) && <h5>In questa pagina puoi vedere chi ha accesso al dataset, per condividerlo con altri utenti chiedi l'assistenza al suo proprietario</h5>}
-        </div> */}
-        <div className="row mb-4">
+        {hasPreview && <div className="row mb-4">
           <div className="col text-muted">
               <i className="text-icon fa-pull-left fas fa-users fa-lg mr-3 mt-1" style={{ lineHeight: '1' }} /><h4><b>Condivisione</b></h4>
           </div>
@@ -497,9 +535,9 @@ class DatasetAdmin extends Component{
               <button className="btn btn-accento" onClick={this.publish} title="Pubblica come Open Data" disabled={isOpenData(acl)}>Pubblica come Open Data</button>
             </div>
           </div>}
-        </div>
-        {this.state.isLoading?<h1 className="text-center fixed-middle"><i className="fas fa-circle-notch fa-spin mr-2"/>Caricamento</h1> :<div className="col-12">
-          <table className="table table-striped">
+        </div>}
+        {hasPreview&&(this.state.isLoading?<h1 className="text-center fixed-middle"><i className="fas fa-circle-notch fa-spin mr-2"/>Caricamento</h1> :<div className="col-12">
+          {<table className="table table-striped">
             <thead>
                 <tr>
                   <th scope="col">Gruppo</th>
@@ -539,11 +577,19 @@ class DatasetAdmin extends Component{
                 </tr>
               }
             </tbody>
-          </table>
-        </div>}
-        {!this.state.isLoading && ableToEdit(loggedUser, dataset) && <div className="row mt-4">
+          </table>}
+        </div>)}
+        {!this.state.isLoading && hasPreview && ableToEdit(loggedUser, dataset) && <div className="row mt-4">
           <div className="col ml-auto">
             <button className="float-right btn btn-primary" onClick={this.toggle} title="Scegli con chi condividere" disabled={isOpenData(acl)}><i className="fa fa-plus fa-lg"/></button>
+          </div>
+        </div>}
+        {ableToEdit(loggedUser, dataset) && <div className="row mb-4">
+          <div className="col-12 text-muted mb-4">
+              <i className="text-icon fa-pull-left fas fa-trash fa-lg mr-3 mt-1" style={{ lineHeight: '1' }} /><h4><b>Elimina</b></h4>
+          </div>
+          <div className="col-5">
+            <button className="btn btn-danger" disabled={this.state.cancella || this.state.acl.length>0 } onClick={this.delete.bind(this, dataset.dcatapit.name, dataset.dcatapit.owner_org, dataset.dcatapit.title)}>{this.state.cancella?<i className="fa fa-spinner fa-spin fa-lg"/>:'Elimina Dataset'}</button>
           </div>
         </div>}
       </div>

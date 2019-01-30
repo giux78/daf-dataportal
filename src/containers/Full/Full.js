@@ -11,7 +11,7 @@ import {
 } from 'react-modal-bootstrap';
 import { setCookie, setSupersetCookie, isEditor, isAdmin, isSysAdmin } from '../../utility'
 import { toastr } from 'react-redux-toastr'
-import { prova, loginAction, isValidToken, receiveLogin, getApplicationCookie, logout, fetchNotifications, fetchNewNotifications, search, getSupersetUrl, datasetDetail, getAllOrganizations } from './../../actions.js'
+import { prova, loginAction, isValidToken, receiveLogin, getApplicationCookie, logout, fetchNotifications, fetchNewNotifications, search, getSupersetUrl, datasetDetail, querySearch } from './../../actions.js'
 import Header from '../../components/Header/';
 import Sidebar from '../../components/Sidebar/';
 import Breadcrumb from '../../components/Breadcrumb/';
@@ -32,7 +32,9 @@ import Organizations from '../../views/Settings/Organizations';
 import Users from '../../views/Settings/Users';
 import Widgets from '../../views/Widgets/Widgets';
 import SearchBar from '../../components/SearchBar/SearchBar';
+import QueryBuild from '../../components/Widgets/QueryBuild'
 import CreateWidget from '../../views/Widgets/CreateWidget'
+
 
 import { serviceurl } from '../../config/serviceurl'
 
@@ -42,6 +44,7 @@ import Vocabulary from '../../semantics/containers/Vocabulary.js'
 import Ontologies from '../../semantics/containers/Ontologies.js'
 import Ontology from '../../semantics/containers/Ontology.js'
 import Validator from '../../semantics/containers/Validator.js'
+import IngestionWizardNewAdvanced from '../../views/IngestionWizard/IngestionWizardNewAdvanced';
 
 const publicVapidKey = 'BI28-LsMRvryKklb9uk84wCwzfyiCYtb8cTrIgkXtP3EYlnwq7jPzOyhda1OdyCd1jqvrJZU06xHSWSxV1eZ_0o';
 
@@ -276,7 +279,7 @@ class Full extends Component {
       askPermission(this.props.loggedUser.uid)
       dispatch(fetchNewNotifications(localStorage.getItem('user')))
       dispatch(fetchNotifications(this.props.loggedUser.uid, 20))
-      document.forms['supset_open'].submit()
+      // document.forms['supset_open'].submit()
     } else {
       if (localStorage.getItem('username') && localStorage.getItem('token') &&
         localStorage.getItem('username') !== 'null' && localStorage.getItem('token') !== 'null') {
@@ -319,7 +322,6 @@ class Full extends Component {
                         askPermission(this.props.loggedUser.uid)
                         dispatch(fetchNewNotifications(localStorage.getItem('user')))
                         dispatch(fetchNotifications(this.props.loggedUser.uid, 20))
-                        document.forms['supset_open'].submit()
                   })
                 }else{
                   console.log('Login Action Response: ' + response.statusText)
@@ -371,13 +373,43 @@ class Full extends Component {
   }
 
   onPvtChangeWidget(e, value){
-    this.setState({
+    const { dispatch } = this.props
+
+    this.widgetOrg.value=''
+    this.validateWidget(e);
+
+    if(value==="0"){
+      let filter = {
+        'text': "",
+        'index': ['catalog_test'],
+        'org': [],
+        'theme':[],
+        'date': "",
+        'status': ['2'],
+        'order': "desc"
+      }
+
+      dispatch(querySearch(filter))
+      .then(json => {
+        var orgs = json.filter(res =>{
+          return(res.type==='organization')
+        })
+
+        this.setState({
+          pvtWidget: value,
+          widgetOrg: '',
+          errorMSgTable:false,
+          allOrganizations: Object.keys(JSON.parse(orgs[0].source))
+        })
+      })
+    }else{
+      this.setState({
         pvtWidget: value,
         widgetOrg: '',
         errorMSgTable:false
     });
-    this.widgetOrg.value=''
-    this.validateWidget(e);
+    }
+
   }
 
   onChangeWidgetTool(e, value){
@@ -555,31 +587,14 @@ class Full extends Component {
     const { dispatch } = this.props
 
     //this.titleWidget.value = ''
-    this.pvtWidget.value = 0
+    this.pvtWidget.value = ""
     this.widgetTool.value = 0
     this.widgetOrg.value=''
     //this.widgetDataset.value=''
 
-    //SET ALL ORGANIZATIONS
-    dispatch(getAllOrganizations())
-      .then(json => {
-            this.setState({
-              allOrganizations: json.elem,
-              pvtWidget:0,
-              widgetTool:0,
-              widgetOrg:'',
-              validationMSgDataset: 'Campo obbligatorio',
-              validationMSg: 'Campo obbligatorio',
-              validationMSgOrgWidget: 'Campo obbligatorio',
-              errorMSgTable:false,
-              isOpenWidget: true
-            })
-          }
-          )
-
- /*    this.setState({
-      //titleWidget:'',
-      pvtWidget:0,
+    this.setState({
+      /* allOrganizations: json.elem, */
+      pvtWidget:"",
       widgetTool:0,
       widgetOrg:'',
       validationMSgDataset: 'Campo obbligatorio',
@@ -587,7 +602,8 @@ class Full extends Component {
       validationMSgOrgWidget: 'Campo obbligatorio',
       errorMSgTable:false,
       isOpenWidget: true
-    }); */
+    })
+
   };
   
   hideModalWidget = () => {
@@ -891,7 +907,7 @@ class Full extends Component {
 
         {/* Modal per creazione nuovo Widget */}
 
-        {loggedUser && <Modal isOpen={this.state.isOpenWidget} onRequestHide={this.hideModalWidget}>
+        {/* {loggedUser && <Modal isOpen={this.state.isOpenWidget} onRequestHide={this.hideModalWidget}>
           <form>
             <ModalHeader>
               <ModalTitle>Crea un Widget</ModalTitle>
@@ -912,7 +928,8 @@ class Full extends Component {
                   <div className="col-md-8">
                   {loggedUser.organizations && loggedUser.organizations.length > 0 ?
                     <select className="form-control" ref={(pvtWidget) => this.pvtWidget = pvtWidget} onChange={(e) => this.onPvtChangeWidget(e, e.target.value)} id="pvtWidget" >
-                      <option value="0" defaultValue key="0">No</option>
+                      <option value="" defaultValue></option>
+                      <option value="0" key="0">No</option>
                       <option value="1" key='1'>Si</option>
                     </select>
                     :
@@ -929,7 +946,7 @@ class Full extends Component {
                   <label className="col-md-2 form-control-label">Organizzazione</label>
                   <div className="col-md-8">
                     {this.state.pvtWidget==1?
-                    <select className="form-control" ref={(widgetOrg) => this.widgetOrg = widgetOrg} onChange={(e) => this.onOrganizationChangeWidget(e, e.target.value)} id="widgetOrg" >
+                    <select className="form-control" ref={(widgetOrg) => this.widgetOrg = widgetOrg} onChange={(e) => this.onOrganizationChangeWidget(e, e.target.value)} id="widgetOrg" disabled={this.state.pvtWidget==='' || allOrganizations.length===0}>
                         <option value=""  key='widgetOrg' defaultValue></option>
                         {loggedUser.organizations && loggedUser.organizations.length > 0 && loggedUser.organizations.map(organization => {
                             return (<option value={organization} key={organization}>{organization}</option>)
@@ -937,7 +954,7 @@ class Full extends Component {
                         }
                     </select>
                     :
-                    <select className="form-control" ref={(widgetOrg) => this.widgetOrg = widgetOrg} onChange={(e) => this.onOrganizationChangeWidget(e, e.target.value)} id="widgetOrg" >
+                    <select className="form-control" ref={(widgetOrg) => this.widgetOrg = widgetOrg} onChange={(e) => this.onOrganizationChangeWidget(e, e.target.value)} id="widgetOrg" disabled={this.state.pvtWidget===''}>
                         <option value=""  key='widgetOrg' defaultValue></option>
                         {allOrganizations && allOrganizations.length > 0 && allOrganizations.map(organization => {
                             return (<option value={organization} key={organization}>{organization}</option>)
@@ -993,7 +1010,7 @@ class Full extends Component {
               </button>
             </ModalFooter>
           </form>
-        </Modal>}
+        </Modal>} */}
 
         <Header history={history} openSearch={this.openSearch} openModalStory={this.openModalStory} openModalDash={this.openModalDash} openModalWidget={this.openModalWidget} />
         <div className="app-body">
@@ -1004,8 +1021,9 @@ class Full extends Component {
             <div className={paddingTop+ " container-fluid "+home }>
               <Switch>
                 <PrivateRoute authed={this.state.authed} path="/private/home" name="Home" exact component={Home}/>
-                <PrivateRouteEditor authed={this.state.authed} loggedUser={loggedUser} path="/private/ingestionwizzard" name="Forms" component={IngestionWizard} history={history} />
-                <PrivateRouteEditor authed={this.state.authed} loggedUser={loggedUser} path="/private/ingestionwizzardnew" name="Forms" component={IngestionWizardNew} history={history} />
+                <PrivateRouteEditor authed={this.state.authed} loggedUser={loggedUser} path="/private/ingestionwizzardnew" name="Forms" component={IngestionWizard} history={history} />
+                <PrivateRouteEditor authed={this.state.authed} loggedUser={loggedUser} path="/private/ingestionwizzard" name="Forms" component={IngestionWizardNew} history={history} />
+                <PrivateRouteEditor authed={this.state.authed} loggedUser={loggedUser} path="/private/advancedingestionwizzard" name="Forms" component={IngestionWizardNewAdvanced} history={history} />
                 <PrivateRoute authed={this.state.authed} path="/private/ontologies/" name="Ontologies" exact component={Ontologies} />
                 <PrivateRoute authed={this.state.authed} path="/private/ontologies/:filter" name="Ontology" component={Ontology} />
                 <PrivateRoute authed={this.state.authed} path="/private/vocabularies" name="Vocabularies" exact component={Vocabularies} />
@@ -1033,10 +1051,6 @@ class Full extends Component {
         <Footer />
       </div>
       }
-    <form id="supset_open" target="open_supset" action={serviceurl.urlApiOpen +'/managed/bi-open-login'} method="POST">
-      <input name="Authorization" type="text" value={"Bearer "+localStorage.getItem('token')} readOnly hidden/>
-    </form>
-    <iframe name="open_supset" hidden/>
     </div>
     )
   }

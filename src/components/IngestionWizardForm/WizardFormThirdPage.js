@@ -6,14 +6,15 @@ import DatePicker from './DatePicker'
 import Sorgenti from './Sorgenti'
 import Storage from './Storage'
 import Pipelines from './Pipelines'
-import { renderFieldInput, renderFieldTextArea, renderFieldSelect, renderOrganization, renderFieldCheckbox, renderFieldLicenze} from './renderField';
+import MappingStandards from './MappingStandards'
+import { renderFieldInput, renderFieldTextArea, renderFieldSelect, renderOrganization, renderStd, renderFieldLicenze} from './renderField';
 import Collapse from 'rc-collapse'
 import 'rc-collapse/assets/index.css'
 
 var Panel = Collapse.Panel;
 
 let WizardFormThirdPage = props => {
-  const { handleSubmit, previousPage, organizations, config, licenze, listaStorage, addStorageToForm, deleteStorageToForm, addGruppiToForm, modificaDataDCATAPIT, openModalInfo, deleteGruppiToForm, listaGruppi, listaSorgenti, listaPipelines, addSorgenteToForm, deleteSorgenteToForm, addPipelineToForm, deletePipelineToForm } = props;
+  const { fields, handleSubmit, previousPage, organizations, datasetStdList, datasetstd, seguestd, config, licenze, listaStorage, addStorageToForm, deleteStorageToForm, addGruppiToForm, modificaDataDCATAPIT, openModalInfo, deleteGruppiToForm, listaGruppi, listaSorgenti, listaPipelines, addSorgenteToForm, deleteSorgenteToForm, addPipelineToForm, deletePipelineToForm } = props;
   return (
     <form onSubmit={handleSubmit} className="col-12 mt-5">
           <FieldArray
@@ -37,6 +38,10 @@ let WizardFormThirdPage = props => {
               listaStorage={listaStorage} 
               addStorageToForm={addStorageToForm} 
               deleteStorageToForm={deleteStorageToForm}
+              seguestd={seguestd}
+              datasetStdList={datasetStdList}
+              datasetstd={datasetstd}
+              fields={fields}
         />
     </form> 
   );
@@ -44,11 +49,11 @@ let WizardFormThirdPage = props => {
 
 
 
-const renderFieldArray = ({previousPage, organizations, listaStorage, addStorageToForm, deleteStorageToForm, licenze, modificaDataDCATAPIT, config, openModalInfo, addGruppiToForm, deleteGruppiToForm, listaGruppi, listaSorgenti, listaPipelines, addSorgenteToForm, deleteSorgenteToForm, addPipelineToForm, deletePipelineToForm, meta : {touched, error} }) => 
+const renderFieldArray = ({fields, previousPage, organizations, datasetstd, listaStorage, datasetStdList, seguestd, addStorageToForm, deleteStorageToForm, licenze, modificaDataDCATAPIT, config, openModalInfo, addGruppiToForm, deleteGruppiToForm, listaGruppi, listaSorgenti, listaPipelines, addSorgenteToForm, deleteSorgenteToForm, addPipelineToForm, deletePipelineToForm, meta : {touched, error} }) => 
       <div>
         <div className="card">
           <div className="card-body">
-            <h5 className="card-title">Informazioni DCATAP</h5>
+            <h5 className="card-title">Informazioni DCAT-AP_IT</h5>
             <div>
               <Field
                 name="categoria"
@@ -67,21 +72,22 @@ const renderFieldArray = ({previousPage, organizations, listaStorage, addStorage
                 config={config}
               />
               <Field
-                name="ownership"
+                name="gruppoproprietario"
                 type="text"
                 component={renderOrganization}
-                label="Organizzazione"
+                label="Gruppo Proprietario"
                 organizations={organizations}
                 openModalInfo={openModalInfo}
                 config={config}
 
               />
-              <DatePicker 
+              <Field
+                component={DatePicker} 
                 label="Ultima Modifica" 
                 name="ultimamodifica" 
                 modificaDataDCATAPIT={modificaDataDCATAPIT}
                 config={config}
-                />
+              />
               <Field
                 name="frequenzaaggiornamento"
                 options={config.frequenzaaggiornamento}
@@ -92,7 +98,7 @@ const renderFieldArray = ({previousPage, organizations, listaStorage, addStorage
 
               />
               <Field
-                name="note"
+                name="descrizione"
                 component={renderFieldTextArea}
                 label="Note"
                 openModalInfo={openModalInfo}
@@ -106,7 +112,7 @@ const renderFieldArray = ({previousPage, organizations, listaStorage, addStorage
           <div className="card-body">
             <h5 className="card-title">Informazioni Operative</h5>
             <div>
-              <Field
+              {/* <Field
                 name="gruppoproprietario"
                 type="text"
                 component={renderOrganization}
@@ -115,25 +121,38 @@ const renderFieldArray = ({previousPage, organizations, listaStorage, addStorage
                 openModalInfo={openModalInfo}
                 config={config}
 
-              />
+              /> */}
               <Field
-                name="datasetstd"
-                options={config.datasetstd}
-                component={renderFieldCheckbox}                
-                label="Dataset standard"
+                name="isvocabulary"
+                options={config['vocabulary']}
+                component={renderFieldSelect}
+                label="Vocabolario Controllato"
                 openModalInfo={openModalInfo}
                 config={config}
-
               />
-              <Field
+              {/* <Field
                 name="seguestd"
-                component={renderFieldCheckbox}
-                label="Segue uno Standard"
+                options={config['standard']}
+                component={renderFieldSelect}
+                label="Standard"
                 openModalInfo={openModalInfo}
                 config={config}
-
               />
-              <Collapse accordion={true}>
+              {seguestd=='seguestandard' &&
+                      <Field
+                        name="datasetstd"
+                        options={datasetStdList}
+                        component={renderStd}
+                        label="Dataset Standard"
+                        openModalInfo={openModalInfo}
+                        config={config}
+                      />
+              }
+              {seguestd=='seguestandard' && datasetstd &&
+                <MappingStandards fields={fields} datasetStdList={datasetStdList} datasetstd={datasetstd}/>
+              
+              } */}
+              {/* <Collapse accordion={true} defaultActiveKey="2">
                 <Panel header="Informazioni Ingestion" headerClass="my-header-class">
                   <Sorgenti 
                     listaSorgenti={listaSorgenti} 
@@ -156,7 +175,7 @@ const renderFieldArray = ({previousPage, organizations, listaStorage, addStorage
                     config={config}
                     />
                 </Panel>
-                <Panel header="Informazioni Procedurali">
+                <Panel header="Informazioni Procedurali"> */}
                   <Field
                     name="tiposalvataggio"
                     options={config['dafvoc-ingform-operational-dataset_proc-read_type']}
@@ -179,12 +198,12 @@ const renderFieldArray = ({previousPage, organizations, listaStorage, addStorage
                     name="strategiamerge"
                     options={config.strategiamerge}
                     component={renderFieldSelect}
-                    label="Strategia di Merge"
+                    label="Strategia di Caricamento"
                     openModalInfo={openModalInfo}
                     config={config}
                   />
-                </Panel>
-              </Collapse>
+                {/* </Panel>
+              </Collapse> */}
             </div>
           </div>
         </div>
@@ -204,7 +223,10 @@ WizardFormThirdPage = reduxForm({
 const selector = formValueSelector('wizard') 
 WizardFormThirdPage = connect(state => {
   const tema = selector(state, 'tema')
-  return { tema }
+  const seguestd = selector(state, 'seguestd')
+  const datasetstd = selector(state, 'datasetstd')
+  const fields = selector(state, 'inferred')
+  return { tema, seguestd, datasetstd, fields }
 })(WizardFormThirdPage)
 
 export default WizardFormThirdPage
